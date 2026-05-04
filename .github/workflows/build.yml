@@ -1,0 +1,146 @@
+name: Build & Release – macOS & Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  # ════════════════════════════════════════════════════════════
+  #  앱 빌드 (macOS ARM64 / macOS Intel / Windows)
+  # ════════════════════════════════════════════════════════════
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            rust-target: aarch64-apple-darwin
+            tauri-args: '--target aarch64-apple-darwin'
+            artifact-name: macos-arm64
+
+          - platform: macos-latest
+            rust-target: x86_64-apple-darwin
+            tauri-args: '--target x86_64-apple-darwin'
+            artifact-name: macos-x86_64
+
+          - platform: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            tauri-args: ''
+            artifact-name: windows-x86_64
+
+    runs-on: ${{ matrix.platform }}
+    name: Build (${{ matrix.artifact-name }})
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Get pnpm store path
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Add macOS Rust target
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add ${{ matrix.rust-target }}
+
+      - name: Install Node dependencies
+        run: pnpm install
+
+      - name: Generate app icons
+        run: pnpm tauri icon src-tauri/icons/icon.png
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Release Publisher Board ${{ github.ref_name }}'
+          releaseBody: |
+            ## 다운로드
+
+            👉 **[다운로드 페이지](https://yoonsuin.github.io/cardy/)** 에서 OS에 맞는 버전을 받으세요.
+
+            | 플랫폼 | 파일 |
+            |--------|------|
+            | macOS Apple Silicon | `*_aarch64.dmg` |
+            | macOS Intel | `*_x64.dmg` |
+            | Windows 64-bit | `*_x64-setup.exe` |
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.tauri-args }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.artifact-name }}-bundle
+          path: |
+            src-tauri/target/**/bundle/dmg/*.dmg
+            src-tauri/target/**/bundle/macos/*.app
+            src-tauri/target/**/bundle/nsis/*.exe
+            src-tauri/target/**/bundle/msi/*.msi
+          if-no-files-found: warn
+          retention-days: 7
+
+  # ════════════════════════════════════════════════════════════
+  #  GitHub Pages 배포 (랜딩 페이지)
+  #  빌드가 모두 성공한 뒤 실행
+  # ════════════════════════════════════════════════════════════
+  deploy-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Deploy landing page
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

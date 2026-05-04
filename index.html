@@ -700,20 +700,21 @@ select:focus {
 
 .stage1-layout {
   display: grid;
-  grid-template-columns: 0.95fr 1.35fr 0.9fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr; /* 좌:우 = 1:1 */
+  gap: 14px;
 }
 .stage1-panel {
   border: .5px solid var(--bl);
   border-radius: var(--radius-md);
   background: var(--bg2);
-  padding: 12px;
-  display: grid;
-  gap: 8px;
-  min-height: 460px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 520px;
 }
 .stage1-panel-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--tx1);
 }
@@ -722,10 +723,116 @@ select:focus {
   gap: 6px;
 }
 .issue-list.stage1-list {
-  max-height: 360px;
+  flex: 1;
+  max-height: 480px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--bm) transparent;
+}
+/* 우측 이슈 상세 카테고리 영역 */
+.issue-detail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bm) transparent;
+  display: grid;
+  gap: 12px;
+  padding-right: 4px;
+}
+.issue-detail-section {
+  border: .5px solid var(--bl);
+  border-radius: var(--radius-md);
+  background: var(--bg1);
+  padding: 12px 14px;
+}
+.issue-detail-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--p600);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.issue-detail-section-body {
+  color: var(--tx1);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.issue-detail-section ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+.issue-detail-section ul li {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--tx1);
+}
+.issue-detail-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.issue-detail-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.issue-detail-meta-label {
+  font-size: 10px;
+  color: var(--tx3);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.issue-detail-meta-value {
+  font-size: 13px;
+  color: var(--tx1);
+  font-weight: 500;
+}
+.issue-detail-link {
+  display: block;
+  font-size: 12px;
+  color: var(--p600);
+  word-break: break-all;
+  line-height: 1.6;
+  text-decoration: none;
+}
+.issue-detail-link:hover { text-decoration: underline; }
+.issue-detail-image-wrap {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: .5px solid var(--bl);
+  background: var(--bg2);
+  max-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.issue-detail-image-wrap img {
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+}
+.issue-detail-empty {
+  border: .5px dashed var(--bm);
+  border-radius: var(--radius-md);
+  background: var(--bg1);
+  color: var(--tx3);
+  font-size: 12px;
+  padding: 36px 16px;
+  text-align: center;
+  line-height: 1.6;
+}
+.issue-detail-summary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
 }
 .issue-card.stage1-item {
   padding: 9px 10px;
@@ -850,13 +957,17 @@ select:focus {
 }
 
 /* ── 카드 레일 (와이어프레임 스타일) ── */
+:root {
+  /* 카드 미리보기 고정 크기 (발행될 1080x1080 비율을 동일하게 유지) */
+  --card-preview-size: 320px;
+}
 .deck-layout {
   display: flex;
-  height: 478px;
+  min-height: 540px;
   overflow: hidden;
 }
 .cards-stage {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -872,24 +983,59 @@ select:focus {
 .cards-stage-title { font-size: 13px; font-weight: 500; color: var(--tx1); }
 .cards-stage-sub { font-size: 11px; color: var(--tx3); margin-top: 2px; }
 .cnt-badge {font-size:11px;color:var(--tx3);background:var(--bg1);border:.5px solid var(--bl);padding:3px 9px;border-radius:99px}
+
+.cards-viewport {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+.cards-scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: .5px solid var(--bm);
+  background: rgba(20, 20, 18, .82);
+  color: var(--tx1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  backdrop-filter: blur(6px);
+  transition: opacity .15s, background .15s, border-color .15s;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+}
+.cards-scroll-btn:hover { background: var(--bg2); border-color: var(--p400); color: var(--p600); }
+.cards-scroll-btn:disabled { opacity: .3; cursor: not-allowed; }
+.cards-scroll-btn.prev { left: 8px; }
+.cards-scroll-btn.next { right: 8px; }
+
 .preview-list {
   align-content: start;
   flex: 1;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 14px 16px;
+  padding: 18px 56px; /* 좌우 패딩으로 화살표 버튼 영역 확보 */
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: var(--bm) transparent;
 }
-.preview-list::-webkit-scrollbar { height: 4px; }
-.preview-list::-webkit-scrollbar-thumb { background: var(--bm); border-radius: 2px; }
+.preview-list::-webkit-scrollbar { height: 6px; }
+.preview-list::-webkit-scrollbar-thumb { background: var(--bm); border-radius: 3px; }
 
 .cards-rail {
   display: flex;
-  gap: 10px;
+  gap: 16px;
   align-items: center;
 }
 .rail-card {
@@ -897,26 +1043,27 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 .rail-card-inner {
-  border-radius: var(--radius-lg);
-  border: .5px solid var(--bm);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.08);
   background: #20211f;
   position: relative;
   cursor: pointer;
-  transition: all .18s;
+  transition: border-color .18s, box-shadow .18s, opacity .18s;
   overflow: hidden;
-  width: 132px;
-  height: 132px;
-  opacity: .72;
+  /* 발행될 카드 크기로 고정 - 반응형 영향 X */
+  width: var(--card-preview-size);
+  height: var(--card-preview-size);
+  flex: 0 0 var(--card-preview-size);
+  opacity: .9;
 }
-.rail-card-inner:hover { opacity: .9; border-color: var(--p400); }
+.rail-card-inner:hover { opacity: 1; border-color: var(--p400); }
 .rail-card.active .rail-card-inner {
-  width: 236px;
-  height: 236px;
+  /* 활성 카드는 크기 변경 없이 강조 스타일만 적용 */
   border: 1.5px solid var(--p400);
-  box-shadow: 0 0 0 3px var(--p50);
+  box-shadow: 0 0 0 3px var(--p50), 0 8px 24px rgba(138,121,238,.18);
   opacity: 1;
 }
 .rail-card.dragging .rail-card-inner { opacity: .28; }
@@ -927,18 +1074,18 @@ select:focus {
 .card-hint {
   margin-top: 2px;
   color: var(--tx3);
-  font-size: 10px;
+  font-size: 11px;
   text-align: center;
 }
 .card-hint.active {
   color: var(--p600);
-  font-weight: 500;
+  font-weight: 600;
 }
 .card-add {
-  flex: 0 0 auto;
-  width: 132px;
-  height: 132px;
-  border-radius: var(--radius-md);
+  flex: 0 0 var(--card-preview-size);
+  width: var(--card-preview-size);
+  height: var(--card-preview-size);
+  border-radius: 16px;
   border: .5px dashed var(--bm);
   background: transparent;
   display: flex;
@@ -947,7 +1094,7 @@ select:focus {
   justify-content: center;
   color: var(--tx3);
   cursor: pointer;
-  gap: 5px;
+  gap: 6px;
   opacity: .55;
   transition: opacity .15s;
 }
@@ -956,10 +1103,12 @@ select:focus {
 
 /* ── 슬라이드 편집 패널 (우측) ── */
 .slide-editor-panel {
-  width: 224px;
-  flex-shrink: 0;
+  flex: 0 0 35%;
+  width: 35%;
+  max-width: 35%;
+  min-width: 280px;
   border-left: .5px solid var(--bl);
-  padding: 14px 13px;
+  padding: 16px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -983,58 +1132,76 @@ select:focus {
   gap: 4px;
 }
 
-/* ── 템플릿 팔레트 ── */
-.template-palette {
+/* ── 템플릿 라디오 (편집 패널 상단) ── */
+.template-radio-group {
   display: grid;
-  gap: 7px;
-  border-top: .5px solid var(--bl);
-  padding: 10px 18px 12px;
-  background: var(--bg2);
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: .5px solid var(--bl);
 }
-.template-palette-label {
+.template-radio-label {
   font-size: 11px;
   color: var(--tx3);
+  font-weight: 500;
 }
-.template-palette-row {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 7px;
+.template-radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.template-card {
-  border-radius: var(--radius-md);
+.template-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
   border: .5px solid var(--bl);
   background: var(--bg1);
-  padding: 6px 4px;
-  cursor: pointer;
-  text-align: center;
-  transition: border-color var(--ease), background var(--ease);
-}
-.template-card.active {
-  border-color: var(--p400);
-  color: var(--p600);
-  background: var(--p50);
-}
-.template-card:hover { border-color: var(--p200); }
-.template-thumb {
-  height: 34px;
-  border-radius: 4px;
-  margin-bottom: 4px;
-  background: var(--g100);
-}
-.template-card[data-template="title"] .template-thumb { background: var(--p100); }
-.template-card[data-template="text"] .template-thumb { background: #B5D4F4; }
-.template-card[data-template="list"] .template-thumb { background: #C0DD97; }
-.template-card[data-template="compare"] .template-thumb { background: var(--a100); }
-.template-card[data-template="image"] .template-thumb { background: #F4C0D1; }
-.template-name {
-  font-size: 10px;
   color: var(--tx2);
-  font-weight: 500;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color var(--ease), background var(--ease), color var(--ease);
+  user-select: none;
+}
+.template-radio input { position: absolute; opacity: 0; pointer-events: none; }
+.template-radio:hover { border-color: var(--p200); color: var(--tx1); }
+.template-radio.active {
+  border-color: var(--p400);
+  background: var(--p50);
+  color: var(--p600);
+  font-weight: 600;
+}
+.template-radio.disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+.template-radio .radio-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bm);
+  background: transparent;
+  position: relative;
+  flex-shrink: 0;
+}
+.template-radio.active .radio-dot {
+  border-color: var(--p400);
+}
+.template-radio.active .radio-dot::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: var(--p400);
+  border-radius: 50%;
 }
 .deck-visual {
   position: relative;
+  width: 100%;
+  height: 100%;
+  /* 카드 비율 1:1 고정 (발행될 카드와 동일) */
   aspect-ratio: 1 / 1;
-  padding: 14px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1059,26 +1226,26 @@ select:focus {
   align-items: center;
 }
 .deck-brand {
-  padding: 3px 7px;
+  padding: 5px 10px;
   border-radius: 999px;
   background: rgba(138,121,238,.18);
   color: #d9d0ff;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: .03em;
   text-transform: uppercase;
 }
 .deck-num {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: rgba(245,241,234,.54);
   background: rgba(255,255,255,.04);
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
 }
 .deck-title {
-  margin-top: 10px;
-  font-size: 16px;
+  margin-top: 12px;
+  font-size: 30px;
   line-height: 1.12;
   font-weight: 800;
   letter-spacing: -.04em;
@@ -1086,67 +1253,60 @@ select:focus {
   white-space: pre-wrap;
 }
 .deck-rule {
-  margin-top: 2px;
-  width: 54px;
-  height: 2px;
+  margin-top: 4px;
+  width: 64px;
+  height: 3px;
   border-radius: 999px;
   background: rgba(245,241,234,.72);
   opacity: .9;
 }
 .deck-body {
-  margin-top: 2px;
+  margin-top: 6px;
   color: rgba(245,241,234,.78);
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.55;
   white-space: pre-wrap;
 }
-.rail-card.active .deck-title { font-size: 28px; }
-.rail-card.active .deck-body { font-size: 14px; line-height: 1.52; }
-.rail-card.active .deck-brand { font-size: 10px; padding: 4px 8px; }
-.rail-card.active .deck-num { font-size: 11px; }
 .deck-list {
   display:grid;
-  gap:8px;
-  margin-top:2px;
+  gap:10px;
+  margin-top:4px;
 }
 .deck-list-item {
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,.07);
   background: rgba(255,255,255,.04);
-  padding: 8px 10px;
+  padding: 10px 13px;
   color: rgba(245,241,234,.9);
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.45;
 }
-.rail-card.active .deck-list-item { font-size: 13px; padding: 10px 12px; }
 .deck-compare {
   display:grid;
   grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:8px;
-  margin-top:2px;
+  gap:10px;
+  margin-top:4px;
 }
 .deck-compare-card {
   border-radius: 12px;
-  padding: 8px 10px;
-  min-height: 98px;
+  padding: 12px 13px;
+  min-height: 132px;
   border:1px solid rgba(255,255,255,.07);
 }
 .deck-compare-card.before { background: rgba(255,255,255,.04); color: rgba(245,241,234,.88); }
 .deck-compare-card.after { background: linear-gradient(180deg, rgba(138,121,238,.86) 0%, rgba(126,93,233,.98) 100%); color: #fff; }
-.rail-card.active .deck-compare-card { min-height: 132px; padding: 10px 12px; }
 .deck-compare-label {
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: .04em;
   opacity: .72;
 }
 .deck-compare-value {
   margin-top: 8px;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.45;
   white-space: pre-wrap;
 }
-.rail-card.active .deck-compare-value { font-size: 13px; line-height: 1.45; }
 .deck-image {
   margin-top: 2px;
   border-radius: var(--radius-sm);
@@ -1166,7 +1326,7 @@ select:focus {
   justify-content: space-between;
   gap: 8px;
   color: rgba(245,241,234,.52);
-  font-size: 9px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .05em;
 }
@@ -1414,20 +1574,183 @@ select:focus {
   font-size: 12px;
   line-height: 1.7;
 }
+.modal-tip a { color: var(--p600); text-decoration: underline; }
+.modal-card.setup { width: min(720px, 100%); }
+.modal-foot {
+  padding: 12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  border-top:.5px solid var(--bl);
+  background: var(--bg2);
+}
+.setup-section {
+  border:.5px solid var(--bl);
+  border-radius: 14px;
+  background: var(--bg2);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+.setup-section + .setup-section { margin-top: 0; }
+.setup-section .config-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.setup-section .config-card-copy {
+  font-size: 11px;
+  color: var(--tx3);
+  line-height: 1.6;
+}
+.setup-status-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+}
+.setup-status-pill {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  border: .5px solid var(--bl);
+  background: var(--bg2);
+  color: var(--tx2);
+}
+.setup-status-pill.ok { color: var(--t600); border-color: rgba(74,197,159,.35); background: rgba(74,197,159,.08); }
+.setup-status-pill.miss { color: #f5d4a5; border-color: rgba(208,139,39,.35); background: rgba(208,139,39,.08); }
+.publish-tip-row {
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border:.5px solid rgba(208,139,39,.22);
+  background: rgba(208,139,39,.08);
+  color: #f5d4a5;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.publish-tip-row strong { color: #ffe9c2; }
+.favorites-list { display: grid; gap: 8px; }
+.favorite-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border:.5px solid var(--bl);
+  border-radius: 12px;
+  background: var(--bg2);
+}
+.favorite-item .favorite-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.favorite-item input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: var(--bg1);
+  color: var(--tx1);
+  border: .5px solid var(--bl);
+  border-radius: 8px;
+}
+.favorite-item input:focus { border-color: var(--p400); outline: none; }
+.favorite-actions { display:flex; gap:6px; }
+.favorite-actions button { padding: 5px 10px; font-size: 11px; }
+.favorite-empty {
+  padding: 16px;
+  border:.5px dashed var(--bl);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--tx3);
+}
+.my-section { display: grid; gap: 10px; }
+.my-section-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.my-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx1);
+}
+.my-section-sub {
+  font-size: 11px;
+  color: var(--tx3);
+  margin-top: 2px;
+}
+.publish-target-card {
+  border:.5px solid var(--bl);
+  border-radius: 14px;
+  background: rgba(255,255,255,.02);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+.publish-target-card .config-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx1);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.publish-target-card .config-card-copy {
+  font-size: 11px;
+  color: var(--tx3);
+  line-height: 1.6;
+}
+.connection-status-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border:.5px solid var(--bl);
+  border-radius: 14px;
+  background: rgba(255,255,255,.02);
+}
+.connection-status-card .label {
+  font-size: 11px;
+  color: var(--tx3);
+  margin-bottom: 4px;
+}
+.connection-status-card .conn-actions { display:flex; gap:8px; flex-wrap:wrap; }
 @media (max-width: 1220px) {
   .my-grid,
-  .stage1-layout,
-  .deck-layout {
+  .stage1-layout {
     grid-template-columns: 1fr;
+  }
+  .deck-layout {
+    flex-direction: column;
+    height: auto;
+  }
+  .deck-layout .slide-editor-panel {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    border-left: none;
+    border-top: .5px solid var(--bl);
   }
   .stage2-meta {
     grid-template-columns: 1fr;
   }
   .config-grid {
     grid-template-columns: 1fr;
-  }
-  .template-palette-row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .footer-bar {
     grid-template-columns: 1fr;
@@ -1558,62 +1881,18 @@ select:focus {
             <div class="mode-copy">공지나 일반 업데이트를 직접 작성하고 같은 톤으로 카드뉴스를 만듭니다.</div>
           </div>
         </div>
-        <div class="panel" style="margin-top:16px; padding:16px; border-radius:20px; background:rgba(255,255,255,.02); box-shadow:none;">
-          <div class="panel-title" style="font-size:15px;">로컬 연동 설정</div>
-          <div class="panel-copy" style="margin-bottom:12px;">Slack은 항상 필수입니다. Jira는 IT 모드에서만 필수입니다.</div>
-          <div class="field-grid">
-            <div class="config-grid">
-              <div class="config-card">
-                <div class="config-card-title">
-                  <span>Slack 발행 설정</span>
-                  <span class="required-note required">필수</span>
-                </div>
-                <div class="config-card-copy">모든 모드에서 발행과 채널 조회에 사용합니다. 팀 공용 봇 토큰 기준으로 동작합니다.</div>
-                <div class="field" id="fieldSlackBotToken">
-                  <div class="label">Slack Bot Token</div>
-                  <input type="password" id="slackBotToken" placeholder="xoxb-..." />
-                </div>
-                <div class="inline-grid">
-                  <div class="field">
-                    <div class="label">Slack Workspace Name</div>
-                    <input type="text" id="slackWorkspaceName" placeholder="예: formytest" />
-                  </div>
-                  <div class="field">
-                    <div class="label">기본 발행 채널 ID</div>
-                    <input type="text" id="slackDefaultChannel" placeholder="예: C0B0F6LJBCN" />
-                  </div>
-                </div>
-              </div>
-              <div class="config-card">
-                <div class="config-card-title">
-                  <span>Jira 연결 설정</span>
-                  <span class="required-note conditional">IT 모드 필수</span>
-                </div>
-                <div class="config-card-copy">IT 모드에서 QA, LIVE 이슈를 읽고 자동 카드 초안을 만들 때 사용합니다. 일반 모드에서는 없어도 됩니다.</div>
-                <div class="field" id="fieldJiraBaseUrl">
-                  <div class="label">Jira Base URL</div>
-                  <input type="text" id="jiraBaseUrl" placeholder="https://your-domain.atlassian.net" />
-                </div>
-                <div class="inline-grid">
-                  <div class="field" id="fieldJiraEmail">
-                    <div class="label">Jira Email</div>
-                    <input type="text" id="jiraEmail" placeholder="name@company.com" />
-                  </div>
-                  <div class="field" id="fieldJiraApiToken">
-                    <div class="label">Jira API Token</div>
-                    <input type="password" id="jiraApiToken" placeholder="Atlassian API token" />
-                  </div>
-                </div>
-              </div>
+        <div class="connection-status-card" style="margin-top:16px;">
+          <div>
+            <div class="label">현재 연결 상태</div>
+            <div class="setup-status-row" id="stage0StatusRow">
+              <span class="setup-status-pill miss" id="stage0SlackPill">Slack 미설정</span>
+              <span class="setup-status-pill miss" id="stage0JiraPill">Jira 미설정</span>
             </div>
-            <div class="warning-box" id="requirementNotice">Slack Bot Token 이 필요합니다.</div>
-            <div class="filter-row">
-              <button class="button-secondary" onclick="saveIntegrationSettings()">연동 설정 저장</button>
-              <button class="button-secondary" onclick="startConnection()">연결 다시 확인</button>
-              <button class="button-secondary" onclick="loadSlackChannels()">채널 목록 불러오기</button>
-              <button class="button-secondary" onclick="testSlackConnection()">Slack 연결 테스트</button>
-            </div>
-            <div class="secure-note">현재 버전에서는 installer 우선 구현을 위해 자격증명을 로컬 앱 설정 파일에 저장합니다. 배포 전에는 OS keychain 이전이 필요합니다.</div>
+            <div class="bookmark-meta" style="margin-top:8px;">초기 설정에서 Slack Bot Token을 입력하면 발행이 가능합니다. IT 모드는 Jira 자격증명도 필요합니다.</div>
+          </div>
+          <div class="conn-actions">
+            <button class="button-secondary" onclick="openSetupModal()">초기 설정 변경</button>
+            <button class="button-secondary" onclick="startConnection()">연결 다시 확인</button>
           </div>
         </div>
         <div class="stage-nav">
@@ -1625,13 +1904,14 @@ select:focus {
       <section class="panel stage" id="stage-1">
         <div class="panel-head">
           <div>
-            <div class="panel-title">2. 카드뉴스 생성</div>
-            <div class="panel-copy">현재 모드에 맞는 입력만 표시합니다.</div>
+            <div class="panel-title" id="stage1Title">2. Jira 이슈 선택</div>
+            <div class="panel-copy" id="stage1Copy">발행할 Jira 이슈를 선택하면 우측에서 카테고리별 상세 정보를 확인할 수 있습니다.</div>
           </div>
         </div>
 
         <div id="itModeSection">
           <div class="stage1-layout">
+            <!-- 좌측: 이슈 리스트 -->
             <div class="stage1-panel">
               <div class="stage1-panel-title">Jira 이슈</div>
               <div class="stage1-search">
@@ -1639,6 +1919,7 @@ select:focus {
                 <div class="filter-row">
                   <button class="button-secondary" onclick="loadIssues()">이슈 검색</button>
                   <button class="button-secondary" onclick="selectAllVisible()">전체 선택</button>
+                  <button class="button-secondary" onclick="clearSelection()">선택 해제</button>
                 </div>
                 <div class="filter-row">
                   <button class="filter-chip active" onclick="setFilter('all', this)">전체</button>
@@ -1651,24 +1932,11 @@ select:focus {
                 <div class="placeholder">후보 이슈를 불러오는 중입니다.</div>
               </div>
             </div>
+            <!-- 우측: 선택한 이슈 상세 (카테고리별) -->
             <div class="stage1-panel">
-              <div class="stage1-panel-title">AI 자동 카드뉴스 구성 중</div>
-              <div class="compose-status" id="stage1ComposeStatus">
-                <div class="compose-summary">
-                  <div class="compose-summary-title">선택된 이슈를 기준으로 카드 초안을 만듭니다.</div>
-                  <div class="compose-summary-copy">이슈를 고른 뒤 카드뉴스 생성을 실행하면 중앙 카드 레일과 편집 화면으로 넘어갑니다.</div>
-                </div>
-                <div class="compose-actions">
-                  <button class="button-secondary" onclick="clearSelection()">선택 해제</button>
-                  <button class="button-secondary" onclick="generateDeck()">AI 생성</button>
-                  <button class="button" onclick="nextStage()">다음</button>
-                </div>
-              </div>
-            </div>
-            <div class="stage1-panel">
-              <div class="stage1-panel-title">Jira 이슈 정보</div>
-              <div id="issueDetailPanel">
-                <div class="placeholder">왼쪽에서 Jira 이슈를 선택하면 상세 정보와 생성 기준이 표시됩니다.</div>
+              <div class="stage1-panel-title">선택한 이슈 상세</div>
+              <div class="issue-detail-scroll" id="issueDetailPanel">
+                <div class="issue-detail-empty">왼쪽에서 Jira 이슈를 선택하면 상세 정보를 카테고리별로 확인할 수 있습니다.</div>
               </div>
             </div>
           </div>
@@ -1749,16 +2017,16 @@ select:focus {
         <!-- 카드 레일 + 편집 패널 -->
         <div class="deck-layout">
           <!-- 카드 레일 영역 -->
-          <div class="cards-stage" style="display:flex;flex-direction:column;">
-            <div class="preview-list" id="previewBoard">
-              <div class="placeholder" style="align-self:center;">카드뉴스를 생성하면 여기에 표시됩니다.</div>
-            </div>
-            <div class="template-palette">
-              <div class="template-palette-label">2장 이후 템플릿 선택</div>
-              <div class="template-palette-row" id="templatePalette"></div>
+          <div class="cards-stage">
+            <div class="cards-viewport">
+              <button class="cards-scroll-btn prev" type="button" id="cardsScrollPrev" aria-label="이전 카드" onclick="scrollCards(-1)">‹</button>
+              <div class="preview-list" id="previewBoard">
+                <div class="placeholder" style="align-self:center;">카드뉴스를 생성하면 여기에 표시됩니다.</div>
+              </div>
+              <button class="cards-scroll-btn next" type="button" id="cardsScrollNext" aria-label="다음 카드" onclick="scrollCards(1)">›</button>
             </div>
           </div>
-          <!-- 편집 패널 -->
+          <!-- 편집 패널 (전체 너비의 35%) -->
           <div class="slide-editor-panel">
             <div class="slide-editor-list" id="slideEditorList">
               <div class="placeholder" style="font-size:11px;">카드를 선택하면 편집기가 표시됩니다.</div>
@@ -1782,31 +2050,41 @@ select:focus {
         </div>
         <div class="publish-shell">
           <div class="field-grid">
-            <div class="config-grid">
-              <div class="field">
-                <div class="label">저장된 발행 대상</div>
-                <select id="recipientSelect"></select>
-              </div>
-              <div class="field">
-                <div class="label">Slack에서 불러온 발행 가능 채널 목록</div>
-                <select id="channelSelect"></select>
-              </div>
+            <!-- 즐겨찾기에서 선택 -->
+            <div class="field">
+              <div class="label">즐겨찾기에서 선택</div>
+              <select id="recipientSelect"></select>
+              <div class="bookmark-meta" style="margin-top:6px;">최근 발행한 채널/DM 또는 즐겨찾기에 저장한 대상을 선택할 수 있습니다. 저장된 즐겨찾기는 My 탭에서 편집·삭제할 수 있습니다.</div>
             </div>
-            <div class="inline-grid">
-              <div class="field">
-                <div class="label">대상 이름</div>
-                <input type="text" id="recipientName" placeholder="예: release, qa 알림" />
+
+            <!-- 새 채널/DM ID 입력 -->
+            <div class="publish-target-card">
+              <div class="config-card-title">
+                <span>새 채널 / DM ID로 발행</span>
               </div>
-              <div class="field">
-                <div class="label">채널 또는 DM ID</div>
-                <input type="text" id="recipientChannelId" placeholder="예: C0B0F6LJBCN" />
+              <div class="config-card-copy">즐겨찾기에 없는 새 채널이나 DM에 발행하려면 ID를 직접 입력하세요. 즐겨찾기 이름을 함께 입력하고 저장하면 다음 번부터 위 드롭다운에서 바로 선택할 수 있습니다.</div>
+              <div class="inline-grid">
+                <div class="field">
+                  <div class="label">즐겨찾기 이름 (선택)</div>
+                  <input type="text" id="recipientName" placeholder="예: 개발 공지, QA 알림" />
+                </div>
+                <div class="field">
+                  <div class="label">채널 또는 DM ID</div>
+                  <input type="text" id="recipientChannelId" placeholder="예: C0B0F6LJBCN" />
+                </div>
               </div>
+              <div class="publish-tip-row">
+                <div>
+                  <strong>봇 설치 필수</strong> · 발행하려는 채널 또는 DM에 Slack 봇이 초대되어 있어야 합니다. 비공개 채널은 봇을 먼저 초대해야 하고, DM은 실제 DM 대화 ID를 사용해야 합니다. <a href="#" onclick="openChannelHelpModal();return false;">채널 ID 확인 방법</a>
+                </div>
+              </div>
+              <div class="channel-tools">
+                <select id="channelSelect" style="flex:1;min-width:200px;"></select>
+                <button class="button-secondary" type="button" onclick="loadSlackChannels()">채널 새로고침</button>
+                <button class="button-secondary" type="button" onclick="useSelectedSlackChannel()">선택한 채널 적용</button>
+              </div>
+              <div class="bookmark-meta">여기에 표시되는 채널은 현재 Slack 봇 토큰으로 접근 가능한 대화만 포함합니다.</div>
             </div>
-            <div class="channel-tools">
-              <button class="button-secondary" type="button" onclick="useSelectedSlackChannel()">불러온 채널 적용</button>
-              <button class="button-secondary" type="button" onclick="openChannelHelpModal()">채널 ID 확인 방법</button>
-            </div>
-            <div class="bookmark-meta">여기에는 현재 Slack 봇 토큰으로 접근 가능한 대화만 표시합니다. 사용자 개인 기준 전체 채널/DM 목록이 아니라, 봇이 실제로 발행할 수 있는 대화 목록입니다.</div>
           </div>
         </div>
 
@@ -1825,7 +2103,7 @@ select:focus {
         <div class="app-footer" style="margin-top:12px;border-radius:0 0 var(--radius-xl) var(--radius-xl);">
           <div style="display:flex;gap:6px;">
             <button class="button-secondary" onclick="prevStage()">← 이전</button>
-            <button class="button-secondary" onclick="saveRecipient()">대상 저장</button>
+            <button class="button-secondary" onclick="saveRecipient()">즐겨찾기 저장</button>
           </div>
           <div class="footer-actions">
             <button class="button-soft" onclick="downloadDeck()">이미지 저장</button>
@@ -1841,14 +2119,48 @@ select:focus {
   <section class="page-shell hidden" id="myPage">
     <div class="app-frame">
       <div class="topbar">
-        <span style="font-size:13px;font-weight:500;color:var(--tx1);">발행 기록</span>
-        <span style="font-size:11px;color:var(--tx3);">최근 발행한 카드뉴스 이력</span>
+        <span style="font-size:13px;font-weight:500;color:var(--tx1);">My</span>
+        <span style="font-size:11px;color:var(--tx3);">초기 설정과 즐겨찾기, 발행 기록을 관리합니다</span>
       </div>
       <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:0;min-height:300px;">
-        <div style="padding:16px;border-right:.5px solid var(--bl);">
-          <div class="history-list" id="historyList">
-            <div class="empty my-empty">아직 발행한 카드뉴스가 없습니다.</div>
+        <div style="padding:16px;border-right:.5px solid var(--bl);display:grid;gap:24px;align-content:start;">
+
+          <!-- 초기 설정 -->
+          <div class="my-section">
+            <div class="my-section-head">
+              <div>
+                <div class="my-section-title">초기 설정</div>
+                <div class="my-section-sub">Slack Bot Token 및 Jira 자격증명</div>
+              </div>
+              <button class="button-secondary" onclick="openSetupModal()">초기 설정 변경</button>
+            </div>
+            <div class="setup-status-row" id="mySetupStatusRow">
+              <span class="setup-status-pill miss" id="mySlackPill">Slack 미설정</span>
+              <span class="setup-status-pill miss" id="myJiraPill">Jira 미설정</span>
+            </div>
           </div>
+
+          <!-- 즐겨찾기 발행 대상 -->
+          <div class="my-section">
+            <div class="my-section-head">
+              <div>
+                <div class="my-section-title">즐겨찾기 발행 대상</div>
+                <div class="my-section-sub">채널/DM ID와 즐겨찾기 이름을 편집·삭제할 수 있습니다</div>
+              </div>
+            </div>
+            <div class="favorites-list" id="favoritesList">
+              <div class="favorite-empty">아직 저장된 즐겨찾기가 없습니다. 발행 단계에서 새 채널을 입력하고 "즐겨찾기 저장"을 눌러 추가하세요.</div>
+            </div>
+          </div>
+
+          <!-- 발행 기록 -->
+          <div class="my-section">
+            <div class="my-section-title">발행 기록</div>
+            <div class="history-list" id="historyList">
+              <div class="empty my-empty">아직 발행한 카드뉴스가 없습니다.</div>
+            </div>
+          </div>
+
         </div>
         <div style="padding:16px;">
           <div class="summary-list">
@@ -1860,73 +2172,92 @@ select:focus {
               <div class="summary-label">발행 수</div>
               <div class="summary-value" id="myHistoryCount">0건</div>
             </div>
+            <div class="summary-item">
+              <div class="summary-label">즐겨찾기 수</div>
+              <div class="summary-value" id="myFavoritesCount">0개</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Slack 연결</div>
+              <div class="summary-value" id="myIntegrationStatus">설정 필요</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── 온보딩 / 초기 설정 섹션 ── -->
-  <div class="onboarding-wrap">
-    <div class="onboarding-hd">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="color:var(--tx3)">
-        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/>
-        <path d="M8 7V11M8 5V5.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
-      초기 설정
+
+</div><!-- /app -->
+
+<!-- ── 초기 설정 모달 (최초 실행 + 발행 시 누락 시 노출) ── -->
+<div class="modal-backdrop" id="setupModal" onclick="closeSetupModal(event)">
+  <div class="modal-card setup" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">초기 설정</div>
+        <div class="bookmark-meta" id="setupModalSubtitle" style="margin-top:2px;">Slack Bot Token은 필수입니다. Jira는 IT 모드에서만 필요합니다.</div>
+      </div>
+      <button class="button-secondary" type="button" onclick="closeSetupModal()" id="setupModalCloseBtn" style="padding:5px 10px;font-size:11px;">닫기</button>
     </div>
-    <div class="onboarding-grid">
-      <div class="onboarding-col">
-        <div class="tk-title">슬랙 토큰 <span class="required-note required">필수</span></div>
-        <div class="tk-desc">슬랙 워크스페이스 Bot Token (xoxb-...)</div>
-        <div class="field" id="fieldSlackBotToken">
-          <div class="ir">
-            <input type="password" id="slackBotToken" placeholder="xoxb-••••••••••••" />
-            <button class="button" style="white-space:nowrap;padding:7px 12px;font-size:11px;" onclick="saveIntegrationSettings()">저장</button>
-          </div>
+    <div class="modal-body">
+      <div class="warning-box" id="requirementNotice" style="display:none;">Slack Bot Token 이 필요합니다.</div>
+
+      <div class="setup-section" id="setupSlackSection">
+        <div class="config-card-title">
+          <span>Slack 발행 설정</span>
+          <span class="required-note required">필수</span>
         </div>
-        <div class="inline-grid" style="margin-top:8px;">
+        <div class="config-card-copy">모든 모드에서 발행과 채널 조회에 사용합니다. 팀 공용 봇 토큰 기준으로 동작합니다.</div>
+        <div class="field" id="fieldSlackBotToken">
+          <div class="label">Slack Bot Token</div>
+          <input type="password" id="slackBotToken" placeholder="xoxb-..." />
+        </div>
+        <div class="inline-grid">
           <div class="field">
-            <div class="label">워크스페이스 이름</div>
+            <div class="label">Slack Workspace Name</div>
             <input type="text" id="slackWorkspaceName" placeholder="예: formytest" />
           </div>
           <div class="field">
-            <div class="label">기본 발행 채널 ID</div>
+            <div class="label">기본 발행 채널 ID (선택)</div>
             <input type="text" id="slackDefaultChannel" placeholder="예: C0B0F6LJBCN" />
           </div>
         </div>
-        <div class="filter-row" style="margin-top:8px;">
-          <button class="button-secondary" style="font-size:11px;padding:5px 10px;" onclick="loadSlackChannels()">채널 목록 불러오기</button>
-          <button class="button-secondary" style="font-size:11px;padding:5px 10px;" onclick="testSlackConnection()">연결 테스트</button>
+        <div class="filter-row">
+          <button class="button-secondary" type="button" onclick="testSlackConnection()">Slack 연결 테스트</button>
+          <button class="button-secondary" type="button" onclick="loadSlackChannels()">채널 목록 불러오기</button>
         </div>
       </div>
-      <div class="onboarding-col">
-        <div class="tk-title">지라 토큰 <span class="required-note conditional">선택 (IT 모드)</span></div>
-        <div class="tk-desc">지라 API 토큰 및 도메인</div>
+
+      <div class="setup-section" id="setupJiraSection">
+        <div class="config-card-title">
+          <span>Jira 연결 설정</span>
+          <span class="required-note conditional">IT 모드 필수</span>
+        </div>
+        <div class="config-card-copy">IT 모드에서 QA, LIVE 이슈를 읽고 자동 카드 초안을 만들 때 사용합니다. 일반 모드에서는 없어도 됩니다.</div>
         <div class="field" id="fieldJiraBaseUrl">
           <div class="label">Jira Base URL</div>
-          <input type="text" id="jiraBaseUrl" placeholder="https://your-domain.atlassian.net" style="margin-bottom:6px;" />
+          <input type="text" id="jiraBaseUrl" placeholder="https://your-domain.atlassian.net" />
         </div>
-        <div class="inline-grid" style="margin-top:4px;">
+        <div class="inline-grid">
           <div class="field" id="fieldJiraEmail">
             <div class="label">Jira Email</div>
             <input type="text" id="jiraEmail" placeholder="name@company.com" />
           </div>
           <div class="field" id="fieldJiraApiToken">
             <div class="label">Jira API Token</div>
-            <input type="password" id="jiraApiToken" placeholder="API 토큰..." />
+            <input type="password" id="jiraApiToken" placeholder="Atlassian API token" />
           </div>
         </div>
-        <div class="warning-box" id="requirementNotice" style="margin-top:8px;display:none;">설정 확인 필요</div>
-        <div style="margin-top:8px;">
-          <button class="button-secondary" style="font-size:11px;padding:5px 10px;" onclick="startConnection()">연결 다시 확인</button>
-        </div>
       </div>
-    </div>
-    <div class="secure-note" style="margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none;">자격증명은 로컬 앱 설정 파일에 저장됩니다. 배포 전에는 OS keychain 이전이 필요합니다.</div>
-  </div>
 
-</div><!-- /app -->
+      <div class="secure-note" style="margin:0;">자격증명은 로컬 앱 설정 파일에 저장됩니다. 배포 전에는 OS keychain 이전이 필요합니다.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="button-secondary" type="button" onclick="closeSetupModal()" id="setupModalCancelBtn">취소</button>
+      <button class="button" type="button" onclick="saveAndCloseSetup()">저장</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-backdrop" id="channelHelpModal" onclick="closeChannelHelpModal(event)">
   <div class="modal-card" onclick="event.stopPropagation()">
@@ -2035,9 +2366,18 @@ var SLIDE_TEMPLATES = [
   { id: "title", label: "타이틀" },
   { id: "text", label: "본문" },
   { id: "image", label: "이미지형" },
-  { id: "list", label: "2단 분할" },
-  { id: "compare", label: "인용구형" }
+  { id: "list", label: "리스트형" },
+  { id: "compare", label: "비교형" }
 ];
+
+// 템플릿별 기본 태그 — 템플릿 선택 시 자동 적용됨
+var TEMPLATE_DEFAULT_TAGS = {
+  title: "CARD NEWS",
+  text: "SUMMARY",
+  image: "IMAGE",
+  list: "POINTS",
+  compare: "BEFORE / AFTER"
+};
 
 function $(id) { return document.getElementById(id); }
 
@@ -2255,6 +2595,7 @@ function syncRequirementState() {
   notice.textContent = state.mode === "it"
     ? "IT 모드는 카드 생성을 위해 다음 Jira 값이 모두 필요합니다: " + missing.join(", ")
     : "일반 모드는 별도 필수 입력 없이 카드 생성이 가능합니다. Slack 토큰은 발행할 때만 필요합니다.";
+  renderSetupStatus();
 }
 
 function ensureRequirements(reason, options) {
@@ -2263,7 +2604,8 @@ function ensureRequirements(reason, options) {
   if (!missing.length) return true;
   resetLog();
   addLog((reason || "작업을 진행할 수 없습니다.") + " 누락된 값: " + missing.join(", "), "log-err");
-  goToStage(0);
+  // 초기 설정 팝업으로 안내
+  openSetupModal({ requireSlack: !!(options && options.requireSlack), reason: reason });
   return false;
 }
 
@@ -2583,14 +2925,133 @@ function renderPage() {
     tabMy.style.color = isMy ? "var(--tx1)" : "var(--tx3)";
   }
   if ($("progressShell")) $("progressShell").style.display = isMy ? "none" : "";
+  if (isMy) {
+    renderFavorites();
+    renderSetupStatus();
+  }
 }
 
 function saveIntegrationSettings() {
   saveSlackConfigFields();
   persistDesktopState();
   syncRequirementState();
+  renderSetupStatus();
   resetLog();
-  addLog("로컬 연동 설정을 저장했습니다.", "log-ok");
+  addLog("초기 설정을 저장했습니다.", "log-ok");
+}
+
+function openSetupModal(options) {
+  var modal = $("setupModal");
+  if (!modal) return;
+  // 현재 state 값을 input에 동기화
+  renderSlackConfigFields();
+  setInputValue("jiraBaseUrl", readInputValue("jiraBaseUrl"));
+  setInputValue("jiraEmail", readInputValue("jiraEmail"));
+  setInputValue("jiraApiToken", readInputValue("jiraApiToken"));
+  // 안내문구 업데이트
+  var subtitle = $("setupModalSubtitle");
+  if (subtitle) {
+    if (options && options.reason) {
+      subtitle.textContent = options.reason + " 아래에서 누락된 값을 채우고 저장하세요.";
+    } else {
+      subtitle.textContent = "Slack Bot Token은 필수입니다. Jira는 IT 모드에서만 필요합니다.";
+    }
+  }
+  modal.classList.add("open");
+  syncRequirementState();
+}
+
+function closeSetupModal(event) {
+  var modal = $("setupModal");
+  if (!modal) return;
+  if (event && event.target && event.target !== modal) return;
+  modal.classList.remove("open");
+}
+
+function saveAndCloseSetup() {
+  saveIntegrationSettings();
+  if (!hasSlackIntegration()) {
+    addLog("Slack Bot Token은 필수입니다.", "log-err");
+    return;
+  }
+  var modal = $("setupModal");
+  if (modal) modal.classList.remove("open");
+  renderSetupStatus();
+}
+
+function renderSetupStatus() {
+  var slackOk = hasSlackIntegration();
+  var jiraOk = hasJiraIntegration();
+  var pairs = [
+    ["stage0SlackPill", slackOk, "Slack 연결됨", "Slack 미설정"],
+    ["stage0JiraPill", jiraOk, "Jira 연결됨", "Jira 미설정"],
+    ["mySlackPill", slackOk, "Slack 연결됨", "Slack 미설정"],
+    ["myJiraPill", jiraOk, "Jira 연결됨", "Jira 미설정"]
+  ];
+  for (var i = 0; i < pairs.length; i += 1) {
+    var node = $(pairs[i][0]);
+    if (!node) continue;
+    var ok = pairs[i][1];
+    node.className = "setup-status-pill " + (ok ? "ok" : "miss");
+    node.textContent = ok ? pairs[i][2] : pairs[i][3];
+  }
+  if ($("myIntegrationStatus")) {
+    $("myIntegrationStatus").textContent = slackOk ? "연결됨" : "설정 필요";
+  }
+}
+
+function renderFavorites() {
+  var node = $("favoritesList");
+  if (!node) return;
+  var items = state.slackConfig.savedRecipients || [];
+  if (!items.length) {
+    node.innerHTML = "<div class='favorite-empty'>아직 저장된 즐겨찾기가 없습니다. 발행 단계에서 새 채널을 입력하고 \"즐겨찾기 저장\"을 눌러 추가하세요.</div>";
+  } else {
+    node.innerHTML = items.map(function(item) {
+      return "<div class='favorite-item' data-id='" + escapeAttribute(item.id) + "'>" +
+        "<div class='favorite-fields'>" +
+          "<input type='text' value='" + escapeAttribute(item.name) + "' placeholder='즐겨찾기 이름' onchange=\"updateFavorite('" + escapeAttribute(item.id) + "', 'name', this.value)\" />" +
+          "<input type='text' value='" + escapeAttribute(item.channelId) + "' placeholder='채널/DM ID' onchange=\"updateFavorite('" + escapeAttribute(item.id) + "', 'channelId', this.value)\" />" +
+        "</div>" +
+        "<div class='favorite-actions'>" +
+          "<button class='button-secondary' type='button' onclick=\"deleteFavorite('" + escapeAttribute(item.id) + "')\">삭제</button>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+  }
+  if ($("myFavoritesCount")) $("myFavoritesCount").textContent = items.length + "개";
+}
+
+function updateFavorite(id, field, value) {
+  var items = state.slackConfig.savedRecipients || [];
+  var changed = false;
+  for (var i = 0; i < items.length; i += 1) {
+    if (items[i].id === id) {
+      items[i][field] = (value || "").trim();
+      changed = true;
+    }
+  }
+  if (!changed) return;
+  state.slackConfig.savedRecipients = items;
+  saveSlackConfigFields();
+  renderSavedRecipients();
+  renderFavorites();
+  persistDesktopState();
+  addLog("즐겨찾기를 업데이트했습니다.", "log-ok");
+}
+
+function deleteFavorite(id) {
+  var items = state.slackConfig.savedRecipients || [];
+  var next = items.filter(function(item) { return item.id !== id; });
+  state.slackConfig.savedRecipients = next;
+  if (state.slackConfig.selectedRecipientId === id) {
+    state.slackConfig.selectedRecipientId = (next[0] && next[0].id) || "";
+  }
+  saveSlackConfigFields();
+  renderSavedRecipients();
+  renderFavorites();
+  persistDesktopState();
+  addLog("즐겨찾기를 삭제했습니다.", "log-ok");
 }
 
 async function loadSlackChannels() {
@@ -2714,49 +3175,109 @@ async function openDeckEditorFromStageOne() {
 
 function renderStageOneInfo() {
   var detail = $("issueDetailPanel");
-  var compose = $("stage1ComposeStatus");
-  if (!detail || !compose) return;
+  if (!detail) return;
   var primary = primarySelectedIssue();
   if (!primary) {
-    detail.innerHTML = "<div class='placeholder'>왼쪽에서 Jira 이슈를 선택하면 상세 정보와 생성 기준이 표시됩니다.</div>";
-    compose.innerHTML =
-      "<div class='compose-summary'>" +
-        "<div class='compose-summary-title'>선택된 Jira 이슈 없음</div>" +
-        "<div class='compose-summary-copy'>하나 이상 선택하면 왜/무엇/효과 구조로 AI 초안을 만듭니다.</div>" +
-      "</div>" +
-      "<div class='compose-actions'>" +
-        "<button class='button-secondary' onclick='loadIssues()'>이슈 새로고침</button>" +
-        "<button class='button' onclick='nextStage()'>다음</button>" +
-      "</div>";
+    detail.innerHTML = "<div class='issue-detail-empty'>왼쪽에서 Jira 이슈를 선택하면 상세 정보를 카테고리별로 확인할 수 있습니다.<br/>여러 개를 선택하면 가장 위 이슈를 기준으로 표시됩니다.</div>";
     return;
   }
-  detail.innerHTML =
-    "<div class='issue-detail-card'>" +
-      "<div class='issue-key'>" + escapeHtml(primary.key) + "</div>" +
-      "<div class='issue-title'>" + escapeHtml(primary.fields.summary) + "</div>" +
-      "<div class='meta-row'>" +
-        "<span class='badge " + (primary.fields.status.name === "LIVE" ? "live" : "qa") + "'>" + escapeHtml(primary.fields.status.name) + "</span>" +
-        "<span class='badge'>" + escapeHtml((primary.fields.assignee && primary.fields.assignee.displayName) || "담당 미지정") + "</span>" +
+  var narrative = buildIssueNarrative(primary);
+  var status = primary.fields.status.name;
+  var owner = (primary.fields.assignee && primary.fields.assignee.displayName) || "담당 미지정";
+  var updated = new Date(primary.fields.updated).toLocaleDateString("ko-KR");
+  var labels = (primary.fields.labels || []).slice(0, 6);
+  var issueType = (primary.fields.issuetype && primary.fields.issuetype.name) || "";
+  var rawDesc = normalizeIssueText(primary) || "설명 정보가 없어 제목 중심으로 카드뉴스를 구성합니다.";
+
+  // 다중 선택 표시 (선택한 이슈 키 chips)
+  var multiSelectInfo = state.selectedKeys.length > 1
+    ? "<div class='issue-detail-summary-tags'>" + state.selectedKeys.map(function(key) {
+        var active = key === primary.key;
+        return "<span class='badge" + (active ? " published" : "") + "'>" + escapeHtml(key) + "</span>";
+      }).join("") + "</div>"
+    : "";
+
+  // Section: 헤더 (이슈 키 + 제목 + 상태)
+  var headerSection =
+    "<div class='issue-detail-section' style='background:var(--p50);border-color:var(--p100);'>" +
+      "<div class='issue-key' style='color:var(--p600);font-family:monospace;font-size:11px;'>" + escapeHtml(primary.key) + (issueType ? " · " + escapeHtml(issueType) : "") + "</div>" +
+      "<div class='issue-detail-section-body' style='font-weight:600;font-size:15px;color:var(--tx1);margin-top:6px;'>" + escapeHtml(primary.fields.summary) + "</div>" +
+      "<div class='meta-row' style='margin-top:8px;'>" +
+        "<span class='badge " + (status === "LIVE" ? "live" : "qa") + "'>" + escapeHtml(status) + "</span>" +
+        "<span class='badge'>" + escapeHtml(owner) + "</span>" +
+        "<span class='badge'>" + escapeHtml(updated) + "</span>" +
       "</div>" +
-    "</div>" +
-    "<div class='issue-detail-copy'>" + escapeHtml(normalizeIssueText(primary) || "설명 정보가 없어 제목 중심으로 카드뉴스를 구성합니다.") + "</div>" +
-    "<div class='compose-actions'>" +
-      "<button class='button-secondary' onclick='generateDeck()'>그대로 사용</button>" +
-      "<button class='button-secondary' onclick='openDeckEditorFromStageOne()'>직접 편집하기</button>" +
+      multiSelectInfo +
     "</div>";
-  compose.innerHTML =
-    "<div class='compose-summary'>" +
-      "<div class='compose-summary-title'>AI 자동 카드뉴스 구성 중</div>" +
-      "<div class='compose-summary-copy'>" + escapeHtml(primary.key + " · " + primary.fields.summary) + "</div>" +
-      "<div class='issue-inline-list'>" + state.selectedKeys.map(function(key) {
-        return "<span class='badge'>" + escapeHtml(key) + "</span>";
-      }).join("") + "</div>" +
-    "</div>" +
-    "<div class='compose-actions'>" +
-      "<button class='button-secondary' onclick='generateDeck()'>AI 생성</button>" +
-      "<button class='button-secondary' onclick='clearSelection()'>선택 초기화</button>" +
-      "<button class='button' onclick='nextStage()'>다음</button>" +
+
+  // Section: 메타 정보 (담당자, 업데이트, 상태, 타입)
+  var metaSection =
+    "<div class='issue-detail-section'>" +
+      "<div class='issue-detail-section-title'>기본 정보</div>" +
+      "<div class='issue-detail-meta-grid'>" +
+        "<div class='issue-detail-meta-item'><div class='issue-detail-meta-label'>담당자</div><div class='issue-detail-meta-value'>" + escapeHtml(owner) + "</div></div>" +
+        "<div class='issue-detail-meta-item'><div class='issue-detail-meta-label'>상태</div><div class='issue-detail-meta-value'>" + escapeHtml(status) + "</div></div>" +
+        "<div class='issue-detail-meta-item'><div class='issue-detail-meta-label'>업데이트</div><div class='issue-detail-meta-value'>" + escapeHtml(updated) + "</div></div>" +
+        "<div class='issue-detail-meta-item'><div class='issue-detail-meta-label'>이슈 타입</div><div class='issue-detail-meta-value'>" + escapeHtml(issueType || "—") + "</div></div>" +
+      "</div>" +
+      (labels.length
+        ? "<div class='issue-detail-summary-tags'>" + labels.map(function(l) { return "<span class='badge'>" + escapeHtml(l) + "</span>"; }).join("") + "</div>"
+        : "") +
     "</div>";
+
+  // Section: 설명
+  var descSection =
+    "<div class='issue-detail-section'>" +
+      "<div class='issue-detail-section-title'>설명</div>" +
+      "<div class='issue-detail-section-body'>" + escapeHtml(rawDesc) + "</div>" +
+    "</div>";
+
+  // Section: 배경 (WHY)
+  var whySection =
+    "<div class='issue-detail-section'>" +
+      "<div class='issue-detail-section-title'>배경 · 왜 진행했나요</div>" +
+      "<ul>" + narrative.why.map(function(line) {
+        return "<li>" + escapeHtml(line) + "</li>";
+      }).join("") + "</ul>" +
+    "</div>";
+
+  // Section: 변경사항 (CHANGE)
+  var changeSection =
+    "<div class='issue-detail-section'>" +
+      "<div class='issue-detail-section-title'>변경 · 무엇이 달라졌나요</div>" +
+      "<ul>" + narrative.change.map(function(line) {
+        return "<li>" + escapeHtml(line) + "</li>";
+      }).join("") + "</ul>" +
+    "</div>";
+
+  // Section: 효과 (EFFECT)
+  var effectSection =
+    "<div class='issue-detail-section'>" +
+      "<div class='issue-detail-section-title'>효과 · 어떤 변화를 기대하나요</div>" +
+      "<ul>" + narrative.effect.map(function(line) {
+        return "<li>" + escapeHtml(line) + "</li>";
+      }).join("") + "</ul>" +
+    "</div>";
+
+  // Section: 이미지
+  var imageSection = narrative.imageUrl
+    ? "<div class='issue-detail-section'>" +
+        "<div class='issue-detail-section-title'>대표 이미지</div>" +
+        "<div class='issue-detail-image-wrap'><img src=\"" + escapeAttribute(narrative.imageUrl) + "\" alt='issue image' /></div>" +
+      "</div>"
+    : "";
+
+  // Section: 참조 링크
+  var linksSection = (narrative.links && narrative.links.length)
+    ? "<div class='issue-detail-section'>" +
+        "<div class='issue-detail-section-title'>참조 링크</div>" +
+        narrative.links.slice(0, 8).map(function(href) {
+          return "<a class='issue-detail-link' href=\"" + escapeAttribute(href) + "\" target='_blank' rel='noreferrer'>" + escapeHtml(href) + "</a>";
+        }).join("") +
+      "</div>"
+    : "";
+
+  detail.innerHTML = headerSection + metaSection + descSection + whySection + changeSection + effectSection + imageSection + linksSection;
 }
 
 function renderIssues() {
@@ -2901,6 +3422,10 @@ function createTextSlide(num, tag, title, body) {
   return { num: num, template: "text", tag: tag || "SUMMARY", title: title || "", body: body || "", items: [], leftTitle: "", leftBody: "", rightTitle: "", rightBody: "", imageUrl: "" };
 }
 
+function createImageSlide(num, tag, title, body, imageUrl) {
+  return { num: num, template: "image", tag: tag || "IMAGE", title: title || "", body: body || "", items: [], leftTitle: "", leftBody: "", rightTitle: "", rightBody: "", imageUrl: imageUrl || "" };
+}
+
 function normalizeSlide(slide) {
   var next = slide || {};
   return {
@@ -2944,16 +3469,19 @@ function changeSlideTemplate(index, template) {
   if (!state.pending || !state.pending.slides[index]) return;
   var slide = normalizeSlide(state.pending.slides[index]);
   if (index === 0) template = "title";
+  // 템플릿이 바뀌면 태그도 해당 템플릿 기본값으로 자동 갱신
+  var nextTag = TEMPLATE_DEFAULT_TAGS[template] || slide.tag || "";
   if (template === "title") {
-    state.pending.slides[index] = createTitleSlide(slide.num, slide.tag || "CARD NEWS", slide.title, slide.body || slide.leftBody || slide.rightBody || slide.items.join("\n"));
+    state.pending.slides[index] = createTitleSlide(slide.num, nextTag, slide.title, slide.body || slide.leftBody || slide.rightBody || slide.items.join("\n"));
   } else if (template === "list") {
-    state.pending.slides[index] = createListSlide(slide.num, slide.tag || "POINTS", slide.title, slide.items.length ? slide.items : splitSentences(slide.body || slide.leftBody || slide.rightBody).slice(0, 4));
+    state.pending.slides[index] = createListSlide(slide.num, nextTag, slide.title, slide.items.length ? slide.items : splitSentences(slide.body || slide.leftBody || slide.rightBody).slice(0, 4));
   } else if (template === "compare") {
     state.pending.slides[index] = createCompareSlide(slide.num, slide.title, slide.leftTitle || "이전", slide.leftBody || slide.body, slide.rightTitle || "이후", slide.rightBody || slide.items.join("\n"));
+    state.pending.slides[index].tag = nextTag;
   } else if (template === "image") {
-    state.pending.slides[index] = createTextSlide(slide.num, slide.tag || "IMAGE", slide.title, slide.body || slide.items.join("\n"));
+    state.pending.slides[index] = createImageSlide(slide.num, nextTag, slide.title, slide.body || slide.items.join("\n"), slide.imageUrl);
   } else {
-    state.pending.slides[index] = createTextSlide(slide.num, slide.tag || "SUMMARY", slide.title, slide.body || slide.leftBody || slide.rightBody || slide.items.join("\n"));
+    state.pending.slides[index] = createTextSlide(slide.num, nextTag, slide.title, slide.body || slide.leftBody || slide.rightBody || slide.items.join("\n"));
   }
   state.pending.slides[index].imageUrl = slide.imageUrl || "";
   renderPreviewBoard();
@@ -2975,12 +3503,11 @@ function themePalette(theme) {
 function renderPreviewBoard() {
   var preview = $("previewBoard");
   var editors = $("slideEditorList");
-  var palette = $("templatePalette");
   renderStageTwoMeta();
   if (!state.pending || !state.pending.slides.length) {
     preview.innerHTML = "<div class='placeholder'>카드뉴스를 생성하면 미리보기가 여기에 표시됩니다.</div>";
     editors.innerHTML = "<div class='placeholder'>카드뉴스를 생성하면 각 장의 편집기가 여기에 표시됩니다.</div>";
-    if (palette) palette.innerHTML = "";
+    updateScrollButtons();
     updateStats();
     return;
   }
@@ -3051,13 +3578,31 @@ function renderPreviewBoard() {
   var activeSlide = normalizeSlide(state.pending.slides[state.activeSlideIndex]);
   editors.innerHTML = (function(slide, index) {
     slide = normalizeSlide(slide);
+    // 템플릿 라디오 버튼 (이름만 표시)
+    var templateRadios = SLIDE_TEMPLATES.map(function(item) {
+      var disabled = index === 0 && item.id !== "title";
+      var isActive = slide.template === item.id;
+      var classes = ["template-radio"];
+      if (isActive) classes.push("active");
+      if (disabled) classes.push("disabled");
+      var attrs = disabled ? "" : " onclick=\"changeSlideTemplate(" + index + ", '" + item.id + "')\"";
+      return "<label class='" + classes.join(" ") + "'" + attrs + ">" +
+        "<span class='radio-dot'></span>" +
+        "<input type='radio' name='slide-template-" + index + "' value='" + item.id + "'" + (isActive ? " checked" : "") + (disabled ? " disabled" : "") + " />" +
+        "<span class='template-name'>" + escapeHtml(item.label) + "</span>" +
+      "</label>";
+    }).join("");
+    var templateGroup =
+      "<div class='template-radio-group'>" +
+        "<div class='template-radio-label'>" + (index === 0 ? "1번 카드는 타이틀 템플릿으로 고정됩니다" : "템플릿 선택") + "</div>" +
+        "<div class='template-radio-row'>" + templateRadios + "</div>" +
+      "</div>";
+
     return "" +
       "<div class='slide-editor'>" +
         "<div class='slide-label'>CARD " + escapeHtml(slide.num) + "</div>" +
-        "<div class='deck-template-tools'>" +
-          "<div class='field'><div class='label'>템플릿</div><select onchange=\"changeSlideTemplate(" + index + ", this.value)\">" + templateOptions(slide.template, index === 0) + "</select></div>" +
-          "<div class='field'><div class='label'>태그</div><input type='text' value=\"" + escapeAttribute(slide.tag) + "\" oninput=\"updateSlide(" + index + ", 'tag', this.value)\" /></div>" +
-        "</div>" +
+        templateGroup +
+        "<div class='field'><div class='label'>태그</div><input type='text' value=\"" + escapeAttribute(slide.tag) + "\" oninput=\"updateSlide(" + index + ", 'tag', this.value)\" /></div>" +
         "<div class='field'>" +
           "<div class='label'>제목</div>" +
           "<input type='text' value=\"" + escapeAttribute(slide.title) + "\" oninput=\"updateSlide(" + index + ", 'title', this.value)\" />" +
@@ -3071,12 +3616,7 @@ function renderPreviewBoard() {
         "<div class='field'><div class='label'>이미지(선택)</div><div class='image-drop'><div class='image-picker " + (slide.imageUrl ? "has-image" : "") + "'>" + (slide.imageUrl ? "<img src=\"" + escapeAttribute(slide.imageUrl) + "\" alt='selected image' />" : "<span>+ 이미지 추가</span>") + "</div><input type='file' accept='image/*' onchange='uploadSlideImage(" + index + ", this)' /><input type='text' value=\"" + escapeAttribute(slide.imageUrl || "") + "\" placeholder='이미지 URL 또는 업로드 사용' oninput=\"updateSlide(" + index + ", 'imageUrl', this.value)\" /><div class='template-tip'>로컬 이미지 업로드 또는 이미지 URL 입력을 지원합니다.</div></div></div>" +
       "</div>";
   })(activeSlide, state.activeSlideIndex);
-  if (palette) {
-    palette.innerHTML = SLIDE_TEMPLATES.map(function(item) {
-      var disabled = state.activeSlideIndex === 0 && item.id !== "title";
-      return "<button class='template-card " + (activeSlide.template === item.id ? "active" : "") + "' data-template='" + item.id + "' " + (disabled ? "disabled" : "") + " onclick=\"changeSlideTemplate(" + state.activeSlideIndex + ", '" + item.id + "')\"><div class='template-thumb'></div><div class='template-name'>" + item.label + "</div></button>";
-    }).join("");
-  }
+  updateScrollButtons();
   updateStats();
 }
 
@@ -3085,6 +3625,40 @@ function selectSlide(index) {
   renderPreviewBoard();
   var card = document.querySelector(".rail-card[data-slide-index='" + index + "']");
   if (card && card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+}
+
+function cardScrollStep() {
+  // 카드 한 장 + gap만큼 스크롤
+  var preview = $("previewBoard");
+  if (!preview) return 320;
+  var card = preview.querySelector(".rail-card");
+  if (!card) return 320;
+  var rect = card.getBoundingClientRect();
+  return Math.round(rect.width + 16);
+}
+
+function scrollCards(direction) {
+  var preview = $("previewBoard");
+  if (!preview) return;
+  var step = cardScrollStep();
+  preview.scrollBy({ left: direction * step, behavior: "smooth" });
+  // 스크롤 끝난 뒤 버튼 상태 갱신
+  setTimeout(updateScrollButtons, 320);
+}
+
+function updateScrollButtons() {
+  var preview = $("previewBoard");
+  var prevBtn = $("cardsScrollPrev");
+  var nextBtn = $("cardsScrollNext");
+  if (!preview || !prevBtn || !nextBtn) return;
+  var hasScroll = preview.scrollWidth > preview.clientWidth + 1;
+  if (!hasScroll) {
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
+  }
+  prevBtn.disabled = preview.scrollLeft <= 1;
+  nextBtn.disabled = preview.scrollLeft >= preview.scrollWidth - preview.clientWidth - 1;
 }
 
 function refreshSlideNumbers() {
@@ -3169,10 +3743,10 @@ function renderStageTwoMeta() {
   var slideCount = (state.pending && state.pending.slides && state.pending.slides.length) || 0;
   if (badge) badge.textContent = slideCount + " / 7";
   if (state.mode === "it") {
-    title.textContent = "AI 카드 구성 검토 및 편집";
+    title.textContent = "카드뉴스 생성 및 수정";
     copy.textContent = "선택된 Jira " + (state.selectedKeys.length || 0) + "건 · 드래그로 순서 변경 · 카드 클릭으로 편집";
   } else {
-    title.textContent = "카드 구성 및 내용 편집";
+    title.textContent = "카드뉴스 생성 및 수정";
     copy.textContent = "드래그로 순서 변경 · 카드 클릭으로 편집";
   }
 }
@@ -3219,7 +3793,7 @@ function renderSteps() {
   var activeStep = stageStepIndex(state.stage);
   var labels = state.mode === "general"
     ? ["모드 설정", "카드뉴스 생성 및 수정", "발행"]
-    : ["모드 설정", "카드뉴스 생성", "검토 및 수정", "발행"];
+    : ["모드 설정", "Jira 이슈 선택", "카드뉴스 생성 및 수정", "발행"];
   var stageTargets = state.mode === "general" ? [0, 2, 3] : [0, 1, 2, 3];
   for (var i = 0; i < 4; i += 1) {
     var chip = $("stepChip" + i);
@@ -3255,6 +3829,8 @@ function goToStage(index) {
   if (state.mode === "general" && index === 2) ensureGeneralDraft();
   state.stage = index;
   renderSteps();
+  // 스테이지 전환 시 스크롤 버튼 상태 갱신
+  if (index === 2) setTimeout(updateScrollButtons, 50);
 }
 
 async function nextStage() {
@@ -3467,13 +4043,21 @@ function buildSlackMessage() {
 
 function currentRecipient() {
   saveSlackConfigFields();
+  var typed = readInputValue("recipientChannelId");
   var saved = selectedRecipient();
-  return (saved && saved.channelId) || readInputValue("recipientChannelId") || state.slackConfig.defaultChannel || ($("channelSelect") ? $("channelSelect").value : "");
+  // 입력값이 있고 저장된 값과 다르면 입력값을 우선 사용
+  if (typed && (!saved || saved.channelId !== typed)) return typed;
+  return (saved && saved.channelId) || typed || state.slackConfig.defaultChannel || ($("channelSelect") ? $("channelSelect").value : "");
 }
 
 function currentRecipientLabel() {
   saveSlackConfigFields();
+  var typed = readInputValue("recipientChannelId");
   var saved = selectedRecipient();
+  // 입력값이 저장된 값과 다른 경우 입력값/이름 우선
+  if (typed && (!saved || saved.channelId !== typed)) {
+    return readInputValue("recipientName") || typed;
+  }
   if (saved && saved.name) return saved.name;
   if (saved && saved.channelId) return saved.channelId;
   var select = $("channelSelect");
@@ -3575,10 +4159,28 @@ async function publishDeck() {
       slides: state.pending.slides.length,
       time: new Date().toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
     });
+    // 발행한 채널을 즐겨찾기에 자동 추가 (이미 있으면 스킵)
+    var typedName = readInputValue("recipientName");
+    var items = state.slackConfig.savedRecipients || [];
+    var alreadySaved = false;
+    for (var k = 0; k < items.length; k += 1) {
+      if (items[k].channelId === recipient) { alreadySaved = true; break; }
+    }
+    if (recipient && !alreadySaved) {
+      items.unshift({
+        id: "recipient-" + Date.now(),
+        name: typedName || label || recipient,
+        channelId: recipient
+      });
+      state.slackConfig.savedRecipients = items;
+      state.slackConfig.selectedRecipientId = items[0].id;
+    }
     setStorage("signal-deck.history", state.history);
     setStorage("signal-deck.published", state.publishedKeys);
     persistDesktopState();
     renderHistory();
+    renderSavedRecipients();
+    renderFavorites();
     renderIssues();
     renderSummary();
     addLog("발행 흐름을 마쳤습니다.", "log-ok");
@@ -3623,8 +4225,9 @@ function saveRecipient() {
   setStorage("signal-deck.recipient", channelId);
   saveSlackConfigFields();
   renderSavedRecipients();
+  renderFavorites();
   persistDesktopState();
-  addLog("발행 대상을 저장했습니다.", "log-ok");
+  addLog("발행 대상을 즐겨찾기에 저장했습니다.", "log-ok");
 }
 
 function openChannelHelpModal() {
@@ -3925,10 +4528,23 @@ async function boot() {
   bindDesktopPersistence();
   syncRequirementState();
   renderHistory();
+  renderFavorites();
+  renderSetupStatus();
   renderSummary();
   renderSteps();
   renderPage();
   updateStats();
+  // 카드 레일 스크롤 이벤트 → 화살표 버튼 활성/비활성 갱신
+  var preview = $("previewBoard");
+  if (preview) {
+    preview.addEventListener("scroll", updateScrollButtons);
+  }
+  window.addEventListener("resize", updateScrollButtons);
+  updateScrollButtons();
+  // 최초 실행 시(Slack 토큰 없음) 초기 설정 팝업 자동 노출
+  if (!hasSlackIntegration()) {
+    openSetupModal({ reason: "Cardy를 사용하려면 초기 설정이 필요합니다." });
+  }
 }
 
 (async function init() {

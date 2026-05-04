@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Release Publisher Board – 다운로드</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --green: #3fb950;
+      --purple: #bc8cff;
+      --orange: #ffa657;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px 80px;
+    }
+
+    /* ── Header ───────────────────────────────────────────── */
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #58a6ff 0%, #bc8cff 100%);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 0 24px rgba(88,166,255,.35);
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+    }
+    .tagline {
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-bottom: 48px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ── Version badge ────────────────────────────────────── */
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .version-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* ── Download card grid ───────────────────────────────── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: 820px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity .2s;
+      pointer-events: none;
+    }
+    .card.mac::before  { background: radial-gradient(ellipse at top left, rgba(88,166,255,.08), transparent 60%); }
+    .card.win::before  { background: radial-gradient(ellipse at top left, rgba(0,120,215,.1), transparent 60%); }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,.4); }
+    .card:hover::before { opacity: 1; }
+
+    /* highlighted card (detected OS) */
+    .card.recommended {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 8px 32px rgba(88,166,255,.15);
+    }
+    .rec-label {
+      display: none;
+      position: absolute;
+      top: 12px; right: 12px;
+      background: var(--accent);
+      color: #0d1117;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .card.recommended .rec-label { display: block; }
+
+    .card-icon { font-size: 36px; margin-bottom: 14px; line-height: 1; }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .card-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+
+    /* download buttons inside card */
+    .btn-group { display: flex; flex-direction: column; gap: 8px; }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 11px 16px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .btn:hover { background: var(--border); border-color: var(--accent); color: var(--accent-hover); }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d1117;
+      font-weight: 600;
+    }
+    .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #0d1117; }
+    .btn.disabled {
+      opacity: .4;
+      pointer-events: none;
+      cursor: default;
+    }
+    .btn-left  { display: flex; align-items: center; gap: 8px; }
+    .btn-arch  { font-size: 11px; color: inherit; opacity: .7; }
+    .btn svg   { flex-shrink: 0; }
+
+    /* ── Loading / error state ────────────────────────────── */
+    .status-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Footer ───────────────────────────────────────────── */
+    footer {
+      margin-top: auto;
+      padding-top: 48px;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.8;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Install note ─────────────────────────────────────── */
+    .install-note {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      max-width: 820px;
+      width: 100%;
+    }
+    .install-note h3 { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 12px; letter-spacing: .5px; text-transform: uppercase; }
+    .note-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 540px) { .note-grid { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr; } }
+    .note-item { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .note-item strong { color: var(--text); display: block; margin-bottom: 2px; }
+  </style>
+</head>
+<body>
+
+  <div class="version-badge">
+    <span class="dot"></span>
+    <span id="version-text">최신 버전 확인 중…</span>
+  </div>
+
+  <div class="logo-wrap">
+    <div class="logo-icon">📋</div>
+    <h1>Release Publisher Board</h1>
+  </div>
+
+  <p class="tagline">
+    Jira 이슈를 카드뉴스로 변환해 Slack에 바로 발행하는<br>
+    로컬 데스크탑 앱입니다.
+  </p>
+
+  <div class="status-row" id="status-row">
+    <div class="spinner"></div>
+    <span>최신 릴리즈를 가져오는 중…</span>
+  </div>
+
+  <div class="cards">
+    <!-- macOS -->
+    <div class="card mac" id="card-mac">
+      <span class="rec-label">현재 환경</span>
+      <div class="card-icon">🍎</div>
+      <div class="card-title">macOS</div>
+      <div class="card-sub">macOS 11 Big Sur 이상</div>
+      <div class="btn-group">
+        <a class="btn primary disabled" id="btn-mac-arm" href="#" download>
+          <span class="btn-left">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Apple Silicon (M1/M2/M3)
+          </span>
+          <span class="btn-arch">.dmg</span>
+        </a>
+        <a class="btn disabled" id="btn-mac-intel" href="#" download>
+          <span class="btn-left">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Intel Mac (x86_64)
+          </span>
+          <span class="btn-arch">.dmg</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Windows -->
+    <div class="card win" id="card-win">
+      <span class="rec-label">현재 환경</span>
+      <div class="card-icon">🪟</div>
+      <div class="card-title">Windows</div>
+      <div class="card-sub">Windows 10 / 11 (64-bit)</div>
+      <div class="btn-group">
+        <a class="btn primary disabled" id="btn-win" href="#" download>
+          <span class="btn-left">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Windows 설치 파일
+          </span>
+          <span class="btn-arch">.exe</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Install notes -->
+  <div class="install-note">
+    <h3>설치 안내</h3>
+    <div class="note-grid">
+      <div class="note-item">
+        <strong>🍎 macOS</strong>
+        .dmg 파일 실행 후 앱을 Applications 폴더로 드래그하세요.
+        첫 실행 시 보안 경고가 뜨면 <em>시스템 설정 → 개인정보 보호 및 보안</em>에서 허용해 주세요.
+      </div>
+      <div class="note-item">
+        <strong>🪟 Windows</strong>
+        .exe 인스톨러를 실행하세요.
+        SmartScreen 경고가 뜨면 <em>추가 정보 → 실행</em>을 클릭하면 됩니다.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/yoonsuin/cardy" target="_blank">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/yoonsuin/cardy/releases" target="_blank">모든 릴리즈</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/yoonsuin/cardy/issues" target="_blank">버그 리포트</a>
+    <br><br>
+    © 2025 yoonsuin. MIT License.
+  </footer>
+
+  <script>
+    const REPO = 'yoonsuin/cardy';
+    const API  = `https://api.github.com/repos/${REPO}/releases/latest`;
+
+    // ── OS detection ───────────────────────────────────────
+    const ua = navigator.userAgent.toLowerCase();
+    const isMac = /macintosh|mac os x/.test(ua);
+    const isWin = /windows/.test(ua);
+    const isArm = (() => {
+      if (navigator.userAgentData?.platform) return false; // coarse check
+      // Apple Silicon: reported as Intel by most browsers on Rosetta too,
+      // so we detect via canvas perf hint or just offer both
+      return false;
+    })();
+
+    if (isMac) document.getElementById('card-mac').classList.add('recommended');
+    if (isWin) document.getElementById('card-win').classList.add('recommended');
+
+    // ── Fetch latest release ───────────────────────────────
+    async function loadRelease() {
+      const statusRow = document.getElementById('status-row');
+      try {
+        const res = await fetch(API, {
+          headers: { Accept: 'application/vnd.github+json' }
+        });
+        if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+        const data = await res.json();
+
+        // version badge
+        document.getElementById('version-text').textContent =
+          `최신 버전: ${data.tag_name}  ·  ${new Date(data.published_at).toLocaleDateString('ko-KR')} 릴리즈`;
+        statusRow.style.display = 'none';
+
+        const assets = data.assets || [];
+
+        // helper: find asset by pattern
+        const find = (pattern) => assets.find(a => pattern.test(a.name));
+
+        const macArm   = find(/aarch64\.dmg$/i);
+        const macIntel = find(/x64\.dmg$/i) || find(/x86_64\.dmg$/i);
+        const winExe   = find(/x64-setup\.exe$/i) || find(/setup\.exe$/i) || find(/\.exe$/i);
+
+        const setBtn = (id, asset, isPrimary) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (asset) {
+            el.href = asset.browser_download_url;
+            el.classList.remove('disabled');
+            if (isPrimary) el.classList.add('primary');
+          } else {
+            el.querySelector('.btn-left').lastChild.textContent =
+              ' ' + el.querySelector('.btn-left').lastChild.textContent.trim() + ' (준비 중)';
+          }
+        };
+
+        setBtn('btn-mac-arm',   macArm,   isMac);
+        setBtn('btn-mac-intel', macIntel, isMac);
+        setBtn('btn-win',       winExe,   isWin);
+
+      } catch (err) {
+        console.error(err);
+        statusRow.innerHTML =
+          `<span style="color:#f85149">⚠ 릴리즈 정보를 가져오지 못했습니다.</span>
+           &nbsp;
+           <a href="https://github.com/${REPO}/releases/latest"
+              style="color:var(--accent);font-size:13px;"
+              target="_blank">GitHub에서 직접 다운로드 →</a>`;
+      }
+    }
+
+    loadRelease();
+  </script>
+</body>
+</html>

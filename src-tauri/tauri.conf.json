@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Release Publisher Board",
+  "productName": "Cardy",
   "version": "0.1.0",
   "identifier": "com.yunsuin.releasepublisher",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Release Publisher Board",
+        "title": "Cardy",
         "width": 1520,
         "height": 980,
         "minWidth": 1200,

@@ -1,12 +1,12 @@
 [package]
-name = "release_publisher_board"
+name = "cardy"
 version = "0.1.0"
-description = "Local-first Tauri desktop app for Jira/Slack card-news publishing"
-authors = ["yunsu-in"]
+description = "Jira 이슈를 카드뉴스로 변환해 Slack에 바로 발행하는 로컬 데스크탑 앱"
+authors = ["yoonsuin"]
 edition = "2021"
 
 [lib]
-name = "release_publisher_board_lib"
+name = "cardy_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

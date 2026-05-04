@@ -8,13 +8,8 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
-  # ════════════════════════════════════════════════════════════
-  #  앱 빌드 (macOS ARM64 / macOS Intel / Windows)
-  # ════════════════════════════════════════════════════════════
   build:
     strategy:
       fail-fast: false
@@ -89,7 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Release Publisher Board ${{ github.ref_name }}'
+          releaseName: 'Cardy ${{ github.ref_name }}'
           releaseBody: |
             ## 다운로드
 
@@ -100,6 +95,8 @@ jobs:
             | macOS Apple Silicon | `*_aarch64.dmg` |
             | macOS Intel | `*_x64.dmg` |
             | Windows 64-bit | `*_x64-setup.exe` |
+
+            > ⚠️ **macOS 최초 실행 시**: Gatekeeper 경고가 뜨면 **시스템 설정 → 개인정보 보호 및 보안 → 확인 없이 열기** 클릭
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.tauri-args }}
@@ -116,31 +113,3 @@ jobs:
             src-tauri/target/**/bundle/msi/*.msi
           if-no-files-found: warn
           retention-days: 7
-
-  # ════════════════════════════════════════════════════════════
-  #  GitHub Pages 배포 (랜딩 페이지)
-  #  빌드가 모두 성공한 뒤 실행
-  # ════════════════════════════════════════════════════════════
-  deploy-pages:
-    needs: build
-    runs-on: ubuntu-latest
-    name: Deploy landing page
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

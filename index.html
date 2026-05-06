@@ -1915,7 +1915,7 @@ select:focus {
             <div class="stage1-panel">
               <div class="stage1-panel-title">Jira 이슈</div>
               <div class="stage1-search">
-                <input type="text" id="jqlBox" value="project = TKI AND status in (QA, LIVE) ORDER BY updated DESC" />
+                <input type="text" id="jqlBox" value="order by updated DESC" placeholder="예: project = MYKEY AND status in (QA, LIVE) ORDER BY updated DESC" />
                 <div class="filter-row">
                   <button class="button-secondary" onclick="loadIssues()">이슈 검색</button>
                   <button class="button-secondary" onclick="selectAllVisible()">전체 선택</button>
@@ -3930,17 +3930,17 @@ async function loadIssues() {
     } else {
       throw new Error("runtime unavailable");
     }
-    state.issues = nodes.filter(function(issue) {
-      return issue.fields && issue.fields.status && (issue.fields.status.name === "QA" || issue.fields.status.name === "LIVE");
-    });
-    setRuntimeStatus("connected", "Jira 연결됨", "실제 Jira 후보를 불러왔습니다.");
+    // JQL이 이미 status 필터를 처리하므로 JS 측 하드코딩 필터 제거
+    state.issues = nodes.filter(function(issue) { return !!(issue.fields); });
+    setRuntimeStatus("connected", "Jira 연결됨", "실제 Jira 후보 " + state.issues.length + "건을 불러왔습니다.");
     addLog("실제 Jira 후보 " + state.issues.length + "건을 불러왔습니다.", "log-ok");
   } catch (error) {
     state.issues = demoIssues.slice();
+    var errMsg = (error && (error.message || String(error))) || "알 수 없는 오류";
     if (state.runtimeKind === "tauri") {
       if (hasJiraIntegration()) {
-        setRuntimeStatus("error", "Jira 연결 실패", "설정은 있으나 Jira 호출에 실패했습니다. 로그를 확인하세요.");
-        addLog("Jira 호출 실패로 데모 후보로 전환했습니다.", "log-err");
+        setRuntimeStatus("error", "Jira 연결 실패", errMsg);
+        addLog("Jira 호출 실패: " + errMsg, "log-err");
       } else {
         setRuntimeStatus("mock", "Tauri 셸 준비 완료", "Jira 설정이 없어 현재는 데모 후보로 동작합니다.");
         addLog("Jira 설정이 없어 데모 후보로 전환했습니다.", "log-warn");

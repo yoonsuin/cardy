@@ -200,18 +200,82 @@
 
     /* ── Install note ─────────────────────────────────────── */
     .install-note {
+      max-width: 820px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .install-note h3 {
+      font-size: 13px; color: var(--text-muted); font-weight: 600;
+      letter-spacing: .5px; text-transform: uppercase;
+    }
+    .note-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 540px) { .note-grid { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr; } }
+
+    .note-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 20px 24px;
-      max-width: 820px;
-      width: 100%;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
     }
-    .install-note h3 { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 12px; letter-spacing: .5px; text-transform: uppercase; }
-    .note-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 540px) { .note-grid { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr; } }
-    .note-item { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
-    .note-item strong { color: var(--text); display: block; margin-bottom: 2px; }
+    .note-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .note-steps { display: flex; flex-direction: column; gap: 8px; }
+    .note-step {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 1px;
+    }
+    .note-step p { margin: 0; }
+    .note-step code {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 4px;
+      cursor: pointer;
+      transition: background .15s;
+      user-select: all;
+    }
+    .note-step code:hover { background: var(--border); }
+    .note-tip {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: rgba(88,166,255,.07);
+      border-left: 2px solid var(--accent);
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .copy-hint { font-size: 11px; color: var(--text-muted); opacity: .6; margin-top: 3px; }
   </style>
 </head>
 <body>
@@ -283,17 +347,65 @@
   <div class="install-note">
     <h3>설치 안내</h3>
     <div class="note-grid">
-      <div class="note-item">
-        <strong>🍎 macOS</strong>
-        .dmg 실행 → 앱을 Applications 폴더로 드래그 → 앱 실행 시 경고가 뜨면:<br>
-        <em>시스템 설정 → 개인정보 보호 및 보안 → "확인 없이 열기"</em> 클릭<br>
-        또는 앱 아이콘을 <em>우클릭 → 열기</em>로 실행하세요.
+
+      <!-- macOS -->
+      <div class="note-card">
+        <div class="note-card-title">🍎 macOS</div>
+        <div class="note-steps">
+          <div class="note-step">
+            <span class="step-num">1</span>
+            <p>다운로드한 <strong>.dmg</strong> 파일을 열고, Cardy 아이콘을 <strong>Applications</strong> 폴더로 드래그합니다.</p>
+          </div>
+          <div class="note-step">
+            <span class="step-num">2</span>
+            <p>앱을 처음 실행하면 <em>"손상되었거나 열 수 없습니다"</em> 경고가 뜰 수 있습니다.<br>
+            <strong>방법 A.</strong> 앱 아이콘 우클릭 → <strong>열기</strong> → 열기 클릭<br>
+            <strong>방법 B.</strong> 터미널에서 아래 명령을 실행한 뒤 앱을 다시 열기:</p>
+          </div>
+          <div class="note-step" style="flex-direction:column; gap:4px; padding-left: 30px;">
+            <code onclick="copyCode(this)">xattr -cr /Applications/Cardy.app</code>
+            <span class="copy-hint">클릭하면 복사됩니다</span>
+          </div>
+          <div class="note-step">
+            <span class="step-num">3</span>
+            <p><em>"확인 없이 열기"</em> 방법: 시스템 설정 → 개인정보 보호 및 보안 → 하단 Cardy 항목 → <strong>확인 없이 열기</strong></p>
+          </div>
+        </div>
+        <div class="note-tip">
+          ⓘ 이 경고는 Apple 인증서 없이 배포된 앱에서 표시됩니다. Cardy는 오픈소스이며 소스코드를 <a href="https://github.com/yoonsuin/cardy" target="_blank">GitHub</a>에서 확인할 수 있습니다.
+        </div>
       </div>
-      <div class="note-item">
-        <strong>🪟 Windows</strong>
-        .exe 인스톨러를 실행하세요.
-        SmartScreen 경고가 뜨면 <em>추가 정보 → 실행</em>을 클릭하면 됩니다.
+
+      <!-- Windows -->
+      <div class="note-card">
+        <div class="note-card-title">🪟 Windows</div>
+        <div class="note-steps">
+          <div class="note-step">
+            <span class="step-num">1</span>
+            <p>다운로드한 <strong>_x64-setup.exe</strong> 파일을 실행합니다.</p>
+          </div>
+          <div class="note-step">
+            <span class="step-num">2</span>
+            <p><em>"Windows가 PC를 보호했습니다"</em> SmartScreen 경고가 뜨면:</p>
+          </div>
+          <div class="note-step" style="flex-direction:column; gap:4px; padding-left:30px;">
+            <p><strong>추가 정보</strong> 클릭 → <strong>실행</strong> 클릭</p>
+          </div>
+          <div class="note-step">
+            <span class="step-num">3</span>
+            <p>설치가 완료되면 시작 메뉴 또는 바탕화면 바로가기에서 <strong>Cardy</strong>를 실행합니다.</p>
+          </div>
+          <div class="note-step">
+            <span class="step-num">4</span>
+            <p>Windows Defender가 차단할 경우: 알림에서 <strong>허용</strong>을 선택하거나,<br>
+            Windows 보안 → 바이러스 및 위협 방지 → <strong>허용</strong>에 추가합니다.</p>
+          </div>
+        </div>
+        <div class="note-tip">
+          ⓘ SmartScreen은 서명되지 않은 소프트웨어를 경고합니다. Cardy는 오픈소스이며 소스코드를 <a href="https://github.com/yoonsuin/cardy" target="_blank">GitHub</a>에서 확인할 수 있습니다.
+        </div>
       </div>
+
     </div>
   </div>
 
@@ -378,6 +490,15 @@
     }
 
     loadRelease();
+
+    function copyCode(el) {
+      var text = el.textContent.trim();
+      navigator.clipboard.writeText(text).then(function() {
+        var orig = el.textContent;
+        el.textContent = '✅ 복사됨!';
+        setTimeout(function() { el.textContent = orig; }, 1500);
+      });
+    }
   </script>
 </body>
 </html>

@@ -387,20 +387,10 @@ async fn upload_slack_images(
     file_ids.push((file_id, image.title.clone()));
   }
 
-  // ── Step 3: 업로드 완료 (channel_id 포함 → 채널 공유 시도) ──
+  // ── Step 3: 업로드 완료 (channel_id 없이 → 워크스페이스에만 올림) ──
+  // channel_id 포함 시 파일 첨부 형태로 공유됨.
+  // 인라인 이미지 미리보기를 위해 Step 4에서 chat.postMessage + blocks 로 직접 공유한다.
   let channel_id = channel.trim().to_string();
-  let files_payload: Vec<Value> = file_ids
-    .iter()
-    .map(|(id, title)| {
-      let mut obj = json!({ "id": id });
-      if let Some(t) = title {
-        if !t.trim().is_empty() {
-          obj["title"] = json!(t);
-        }
-      }
-      obj
-    })
-    .collect();
 
   let comment_text = initial_comment
     .as_deref()
@@ -409,18 +399,15 @@ async fn upload_slack_images(
     .unwrap_or("")
     .to_string();
 
-  let mut complete_payload = json!({
-    "files": files_payload,
-    "channel_id": channel_id
-  });
-  if !comment_text.is_empty() {
-    complete_payload["initial_comment"] = json!(&comment_text);
-  }
+  let files_payload: Vec<Value> = file_ids
+    .iter()
+    .map(|(id, _)| json!({ "id": id }))
+    .collect();
 
   let complete_body: Value = client
     .post("https://slack.com/api/files.completeUploadExternal")
     .bearer_auth(token)
-    .json(&complete_payload)
+    .json(&json!({ "files": files_payload }))
     .send()
     .await
     .map_err(|e| format!("slack completeUpload request failed: {e}"))?
@@ -434,73 +421,52 @@ async fn upload_slack_images(
     return Err(format!("slack completeUpload failed: {err}{}", if needed.is_empty() { String::new() } else { format!(" (needed scope: {needed})") }));
   }
 
-  // ── Step 4: 채널 공유 확인 → 누락 시 chat.postMessage fallback ──
-  // completeUploadExternal 이 ok:true 여도 channel sharing 이 조용히 실패할 수 있음.
-  // 응답의 shares 필드를 확인해 실제로 공유됐는지 검증한다.
-  let shared_to_channel = complete_body
-    .get("files")
-    .and_then(Value::as_array)
-    .and_then(|arr| arr.first())
-    .and_then(|f| f.get("shares"))
-    .map(|shares| !shares.as_object().map(|m| m.is_empty()).unwrap_or(true))
-    .unwrap_or(false);
+  // ── Step 4: chat.postMessage + Block Kit image 블록으로 인라인 이미지 공유 ──
+  // slack_file: { id } 참조 방식으로 업로드된 파일을 이미지 블록에 삽입 → 인라인 미리보기 표시
+  let mut blocks: Vec<Value> = Vec::new();
 
-  let mut share_method = if shared_to_channel { "completeUpload" } else { "fallback" }.to_string();
+  // 코멘트 텍스트가 있으면 첫 번째 section 블록으로 추가
+  if !comment_text.is_empty() {
+    blocks.push(json!({
+      "type": "section",
+      "text": { "type": "mrkdwn", "text": &comment_text }
+    }));
+  }
 
-  if !shared_to_channel {
-    // fallback: chat.postMessage 로 채널에 텍스트 메시지 전송
-    // 이미지는 파일로 이미 워크스페이스에 존재하므로, 링크 포함 메시지를 보냄
-    let file_links: Vec<String> = complete_body
-      .get("files")
-      .and_then(Value::as_array)
-      .cloned()
-      .unwrap_or_default()
-      .iter()
-      .filter_map(|f| {
-        f.get("permalink").and_then(Value::as_str).map(|s| s.to_string())
-      })
-      .collect();
+  // 각 파일을 image 블록으로 순서대로 추가
+  for (file_id, title) in file_ids.iter() {
+    let alt = title.as_deref().unwrap_or("카드뉴스 이미지").to_string();
+    blocks.push(json!({
+      "type": "image",
+      "slack_file": { "id": file_id },
+      "alt_text": alt
+    }));
+  }
 
-    let fallback_text = if file_links.is_empty() {
-      if comment_text.is_empty() {
-        "카드뉴스를 발행했습니다.".to_string()
-      } else {
-        comment_text.clone()
-      }
-    } else {
-      let links = file_links.join("\n");
-      if comment_text.is_empty() {
-        format!("카드뉴스를 발행했습니다.\n{links}")
-      } else {
-        format!("{comment_text}\n{links}")
-      }
-    };
+  let post_resp: Value = client
+    .post("https://slack.com/api/chat.postMessage")
+    .bearer_auth(token)
+    .json(&json!({
+      "channel": &channel_id,
+      "blocks": blocks
+    }))
+    .send()
+    .await
+    .map_err(|e| format!("slack postMessage request failed: {e}"))?
+    .json()
+    .await
+    .map_err(|e| format!("slack postMessage decode failed: {e}"))?;
 
-    let post_resp: Value = client
-      .post("https://slack.com/api/chat.postMessage")
-      .bearer_auth(token)
-      .json(&json!({ "channel": channel_id, "text": fallback_text }))
-      .send()
-      .await
-      .map_err(|e| format!("slack fallback postMessage request failed: {e}"))?
-      .json()
-      .await
-      .map_err(|e| format!("slack fallback postMessage decode failed: {e}"))?;
-
-    if post_resp.get("ok").and_then(Value::as_bool).unwrap_or(false) {
-      share_method = "chat.postMessage(fallback)".to_string();
-    } else {
-      let err = post_resp.get("error").and_then(Value::as_str).unwrap_or("unknown_error");
-      return Err(format!("slack 채널 공유 실패 (completeUpload 및 fallback 모두 실패): {err}"));
-    }
+  if !post_resp.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+    let err = post_resp.get("error").and_then(Value::as_str).unwrap_or("unknown_error");
+    return Err(format!("slack 채널 메시지 전송 실패: {err}"));
   }
 
   Ok(json!({
     "ok": true,
-    "shareMethod": share_method,
+    "shareMethod": "chat.postMessage(blocks)",
     "fileCount": file_ids.len(),
     "channel": channel_id,
-    "uploads": complete_body,
     "workspaceName": settings.slack_workspace_name
   }))
 }

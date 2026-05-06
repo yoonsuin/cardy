@@ -338,14 +338,15 @@ async fn upload_slack_images(
   for image in images.iter() {
     let bytes = decode_data_url(&image.data_url)?;
 
-    // ── Step 1: 업로드 URL 발급 ───────────────────────────
+    // ── Step 1: 업로드 URL 발급 (form-encoded, JSON 아님) ──
+    let length_str = bytes.len().to_string();
     let get_url_body: Value = client
       .post("https://slack.com/api/files.getUploadURLExternal")
       .bearer_auth(token)
-      .json(&json!({
-        "filename": image.filename,
-        "length": bytes.len()
-      }))
+      .form(&[
+        ("filename", image.filename.as_str()),
+        ("length",   length_str.as_str()),
+      ])
       .send()
       .await
       .map_err(|e| format!("slack getUploadURL request failed: {e}"))?
@@ -355,7 +356,8 @@ async fn upload_slack_images(
 
     if !get_url_body.get("ok").and_then(Value::as_bool).unwrap_or(false) {
       let err = get_url_body.get("error").and_then(Value::as_str).unwrap_or("unknown_error");
-      return Err(format!("slack getUploadURL failed: {err}"));
+      let hint = get_url_body.get("needed").and_then(Value::as_str).unwrap_or("");
+      return Err(format!("slack getUploadURL failed: {err}{}", if hint.is_empty() { String::new() } else { format!(" (needed scope: {hint})") }));
     }
 
     let upload_url = get_url_body
@@ -369,14 +371,18 @@ async fn upload_slack_images(
       .ok_or_else(|| "slack getUploadURL: missing file_id".to_string())?
       .to_string();
 
-    // ── Step 2: 파일 바이트 업로드 ───────────────────────
-    client
-      .post(&upload_url)
+    // ── Step 2: 파일 바이트 업로드 (PUT, Slack 문서 기준) ──
+    let upload_resp = client
+      .put(&upload_url)
       .header("Content-Type", "application/octet-stream")
       .body(bytes)
       .send()
       .await
       .map_err(|e| format!("slack file upload request failed: {e}"))?;
+    if !upload_resp.status().is_success() {
+      let status = upload_resp.status();
+      return Err(format!("slack file upload failed: HTTP {status}"));
+    }
 
     file_ids.push((file_id, image.title.clone()));
   }
@@ -418,7 +424,8 @@ async fn upload_slack_images(
 
   if !complete_body.get("ok").and_then(Value::as_bool).unwrap_or(false) {
     let err = complete_body.get("error").and_then(Value::as_str).unwrap_or("unknown_error");
-    return Err(format!("slack completeUpload failed: {err}"));
+    let needed = complete_body.get("needed").and_then(Value::as_str).unwrap_or("");
+    return Err(format!("slack completeUpload failed: {err}{}", if needed.is_empty() { String::new() } else { format!(" (needed scope: {needed})") }));
   }
 
   Ok(json!({

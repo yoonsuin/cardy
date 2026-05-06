@@ -4310,15 +4310,15 @@ async function publishDeck() {
       addLog("[1/3] 카드 이미지를 렌더링합니다...", "log-info");
       var images = await renderDeckPngPayloads();
       addLog("[1/3] " + images.length + "장 이미지 렌더링 완료.", "log-ok");
-      addLog("[2/3] Slack 업로드 URL 발급 중...", "log-info");
+      addLog("[2/3] files.getUploadURLExternal 호출 중... (form-encoded)", "log-info");
+      addLog("[3/3] 업로드 후 files.completeUploadExternal로 채널에 공유합니다.", "log-info");
       var result = await tauriInvoke("upload_slack_images", {
         settings: integrationSettings(),
         channel: recipient,
         initial_comment: buildSlackMessage(),
         images: images
       });
-      addLog("[3/3] 업로드 완료 · 채널 공유됨.", "log-ok");
-      addLog("Slack 카드뉴스 이미지 발행을 완료했습니다.", "log-ok");
+      addLog("✓ 모든 단계 완료 · Slack 채널에 이미지가 공유됐습니다.", "log-ok");
     } else {
       throw new Error("runtime unavailable");
     }
@@ -4364,8 +4364,10 @@ async function publishDeck() {
       hint = "\n[힌트] 봇을 채널에 초대해야 합니다. (/invite @봇이름)";
     } else if (errMsg.indexOf("invalid_auth") !== -1 || errMsg.indexOf("token") !== -1) {
       hint = "\n[힌트] Slack Bot Token이 유효하지 않습니다. 초기 설정에서 토큰을 다시 확인하세요.";
+    } else if (errMsg.indexOf("invalid_arguments") !== -1) {
+      hint = "\n[힌트] API 파라미터 오류입니다. 앱을 최신 버전으로 업데이트 후 재시도하세요.";
     } else if (errMsg.indexOf("getUploadURL") !== -1) {
-      hint = "\n[힌트] files.getUploadURLExternal 실패 → files:write 스코프 또는 토큰을 확인하세요.";
+      hint = "\n[힌트] files.getUploadURLExternal 실패 → Slack App에 files:write 스코프 추가 후 재설치 필요.";
     } else if (errMsg.indexOf("completeUpload") !== -1) {
       hint = "\n[힌트] files.completeUploadExternal 실패 → 채널 ID와 봇 초대 여부를 확인하세요.";
     }

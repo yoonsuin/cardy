@@ -179,7 +179,7 @@ async fn fetch_jira_issues(
   });
 
   let response = client
-    .post(format!("{base_url}/rest/api/3/search"))
+    .post(format!("{base_url}/rest/api/3/search/jql"))
     .headers(headers)
     .json(&body)
     .send()

@@ -1452,6 +1452,103 @@ select:focus {
 .log-ok::before { content: "✓ "; }
 .log-info::before { content: "· "; }
 
+/* ── 발행 토스트 알림 ── */
+#publishToast {
+  display: none;
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 8000;
+  width: 320px;
+  background: var(--bg2);
+  border: .5px solid var(--bm);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: slideInRight 200ms cubic-bezier(.2,.8,.2,1);
+}
+#publishToast.visible { display: block; }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 8px;
+  border-bottom: .5px solid var(--bl);
+}
+.toast-icon {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.toast-icon.running { background: var(--p50); color: var(--p400); }
+.toast-icon.ok      { background: var(--t50); color: var(--t600); }
+.toast-icon.err     { background: var(--r50); color: var(--r800); }
+.toast-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx1);
+  flex: 1;
+}
+.toast-close {
+  background: none; border: none; color: var(--tx3);
+  font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+.toast-close:hover { color: var(--tx1); }
+.toast-steps {
+  padding: 8px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.toast-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font: 11px/1.55 ui-monospace, SFMono-Regular, monospace;
+  color: var(--tx3);
+}
+.toast-step.active { color: var(--p600); }
+.toast-step.done   { color: var(--t600); }
+.toast-step.fail   { color: var(--r800); }
+.toast-step-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.toast-step.active .toast-step-dot {
+  animation: dotPulse 800ms ease-in-out infinite;
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .4; transform: scale(.7); }
+}
+.toast-footer {
+  padding: 0 14px 10px;
+  display: flex;
+  gap: 6px;
+}
+.toast-footer.hidden { display: none; }
+.toast-btn-log {
+  flex: 1;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: .5px solid var(--bm);
+  background: var(--bg3);
+  color: var(--tx1);
+  cursor: pointer;
+  text-align: center;
+}
+.toast-btn-log:hover { background: var(--p50); border-color: var(--p200); color: var(--p600); }
+
 /* 로그 상세 팝업 */
 #logDetailBackdrop {
   display: none;
@@ -1494,8 +1591,16 @@ select:focus {
 }
 #logDetailBox .ldwarn { color: var(--a600); }
 #logDetailBox .ldcopy {
-  font-size: 11px;
+  font: 11px/1.7 ui-monospace, SFMono-Regular, monospace;
   color: var(--tx3);
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: var(--bg1);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  border: .5px solid var(--bl);
+  max-height: 300px;
+  overflow-y: auto;
 }
 #logDetailBox .ldfoot {
   display: flex;
@@ -2310,6 +2415,20 @@ select:focus {
 
 </div><!-- /app -->
 
+<!-- ── 발행 토스트 ── -->
+<div id="publishToast">
+  <div class="toast-head">
+    <div class="toast-icon running" id="toastIcon">⋯</div>
+    <div class="toast-title" id="toastTitle">발행 중...</div>
+    <button class="toast-close" onclick="hidePublishToast()">×</button>
+  </div>
+  <div class="toast-steps" id="toastSteps"></div>
+  <div class="toast-footer hidden" id="toastFooter">
+    <button class="toast-btn-log" onclick="openFullLogPopup()">전체 로그 보기</button>
+    <button class="toast-close" style="padding:4px 10px;border:.5px solid var(--bm);border-radius:var(--radius-sm);font-size:11px;background:var(--bg3);color:var(--tx3);" onclick="hidePublishToast()">닫기</button>
+  </div>
+</div>
+
 <!-- ── 로그 상세 팝업 ── -->
 <div id="logDetailBackdrop" onclick="closeLogDetail(event)">
   <div id="logDetailBox" onclick="event.stopPropagation()">
@@ -2847,68 +2966,155 @@ async function persistDesktopState() {
   }
 }
 
+// ──────────────────────────────────────────────────────────
+//  로그 시스템 + 토스트 알림
+// ──────────────────────────────────────────────────────────
 var _logHistory = [];
+var _toastSteps = [];   // 토스트 단계 목록
 
 function addLog(message, type) {
   var ts = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   _logHistory.push({ ts: ts, msg: message, type: type || "log-info" });
+
+  // logBox 에 줄 추가
   var line = document.createElement("div");
   line.className = "log-line " + (type || "log-info");
   line.textContent = message;
-  // 오류·경고는 클릭 시 상세 팝업
   if (type === "log-err" || type === "log-warn") {
-    (function(m, t, stamp) {
-      line.addEventListener("click", function() { openLogDetail(m, t, stamp); });
-      line.title = "클릭하면 상세 내용을 볼 수 있습니다";
-    }(message, type, ts));
+    (function(m, t) {
+      line.addEventListener("click", function() { openFullLogPopup(m, t); });
+      line.title = "클릭 → 전체 로그 보기";
+    }(message, type));
   }
-  $("logBox").appendChild(line);
-  $("logBox").scrollTop = $("logBox").scrollHeight;
+  var lb = $("logBox");
+  if (lb) { lb.appendChild(line); lb.scrollTop = lb.scrollHeight; }
+
+  // 상단 요약
   var summary = $("headerLogSummary");
   if (summary) {
     summary.innerHTML = "<strong>로그</strong><span>" + escapeHtml(message) + "</span>";
-    if (type === "log-err" || type === "log-warn") {
-      summary.style.cursor = "pointer";
-      summary.onclick = function() { openLogDetail(message, type, ts); };
-    }
+    summary.style.cursor = (type === "log-err" || type === "log-warn") ? "pointer" : "";
+    summary.onclick = (type === "log-err" || type === "log-warn")
+      ? function() { openFullLogPopup(message, type); }
+      : null;
+  }
+
+  // 토스트에도 반영
+  _pushToastStep(message, type);
+}
+
+// ── 토스트: 발행 시작 ──
+function showPublishToast() {
+  _toastSteps = [];
+  var toast = $("publishToast");
+  var steps = $("toastSteps");
+  var footer = $("toastFooter");
+  var icon = $("toastIcon");
+  var title = $("toastTitle");
+  if (!toast) return;
+  if (steps) steps.innerHTML = "";
+  if (footer) footer.classList.add("hidden");
+  if (icon)  { icon.textContent = "⋯"; icon.className = "toast-icon running"; }
+  if (title) title.textContent = "발행 중...";
+  toast.classList.add("visible");
+}
+
+// ── 토스트: 단계 추가 ──
+function _pushToastStep(message, type) {
+  var steps = $("toastSteps");
+  if (!steps || !$("publishToast").classList.contains("visible")) return;
+  var stepClass = type === "log-ok"  ? "done"
+                : type === "log-err" ? "fail"
+                : type === "log-warn" ? "fail"
+                : "active";
+  // 마지막 active → done 으로 갱신
+  var prev = steps.querySelector(".toast-step.active");
+  if (prev) prev.className = "toast-step done";
+  var div = document.createElement("div");
+  div.className = "toast-step " + stepClass;
+  div.innerHTML = '<div class="toast-step-dot"></div><span>' + escapeHtml(message) + '</span>';
+  steps.appendChild(div);
+  steps.scrollTop = steps.scrollHeight;
+}
+
+// ── 토스트: 발행 완료/실패 ──
+function finishPublishToast(success, shareMethod) {
+  var icon  = $("toastIcon");
+  var title = $("toastTitle");
+  var footer = $("toastFooter");
+  if (success) {
+    if (icon)  { icon.textContent = "✓"; icon.className = "toast-icon ok"; }
+    if (title) title.textContent = "발행 완료" + (shareMethod ? " · " + shareMethod : "");
+  } else {
+    if (icon)  { icon.textContent = "✕"; icon.className = "toast-icon err"; }
+    if (title) title.textContent = "발행 실패";
+  }
+  if (footer) footer.classList.remove("hidden");
+  // 성공 시 5초 후 자동 닫기
+  if (success) {
+    setTimeout(function() {
+      var t = $("publishToast");
+      if (t && !$("logDetailBackdrop").classList.contains("open")) hidePublishToast();
+    }, 5000);
   }
 }
 
-function openLogDetail(message, type, ts) {
-  var bd = $("logDetailBackdrop");
+function hidePublishToast() {
+  var t = $("publishToast");
+  if (t) t.classList.remove("visible");
+}
+
+// ── 전체 로그 팝업 ──
+function openFullLogPopup(highlightMsg, highlightType) {
+  var bd   = $("logDetailBackdrop");
   var title = $("logDetailTitle");
-  var msg = $("logDetailMsg");
-  var copy = $("logDetailCopy");
+  var msg   = $("logDetailMsg");
+  var copy  = $("logDetailCopy");
   if (!bd) return;
-  title.textContent = type === "log-err" ? "오류 상세" : "경고 상세";
-  title.style.color = type === "log-err" ? "var(--r800)" : "var(--a600)";
-  msg.textContent = message;
-  msg.className = "ldmsg" + (type === "log-warn" ? " ldwarn" : "");
-  // 전체 로그 히스토리도 표시
-  var recent = _logHistory.slice(-10).map(function(e) {
-    return "[" + e.ts + "] " + e.msg;
+
+  if (highlightMsg) {
+    var isErr = highlightType === "log-err";
+    title.textContent = isErr ? "오류 상세" : "경고 상세";
+    title.style.color = isErr ? "var(--r800)" : "var(--a600)";
+    msg.textContent  = highlightMsg;
+    msg.className    = "ldmsg" + (!isErr ? " ldwarn" : "");
+    msg.style.display = "";
+  } else {
+    title.textContent = "전체 발행 로그";
+    title.style.color = "var(--tx1)";
+    msg.style.display = "none";
+  }
+
+  var allLogs = _logHistory.map(function(e) {
+    var prefix = e.type === "log-ok"   ? "✓"
+               : e.type === "log-err"  ? "✕"
+               : e.type === "log-warn" ? "⚠"
+               : "·";
+    return "[" + e.ts + "] " + prefix + " " + e.msg;
   }).join("\n");
-  copy.textContent = "최근 로그:\n" + recent;
+  copy.textContent = allLogs || "(로그 없음)";
+
   bd.classList.add("open");
 }
 
+function openLogDetail(message, type) { openFullLogPopup(message, type); }
+
 function closeLogDetail(e) {
   if (e && e.target !== $("logDetailBackdrop")) return;
-  var bd = $("logDetailBackdrop");
-  if (bd) bd.classList.remove("open");
+  $("logDetailBackdrop").classList.remove("open");
 }
 
 function copyLogDetail() {
-  var msg = $("logDetailMsg");
+  var msg  = $("logDetailMsg");
   var copy = $("logDetailCopy");
-  var text = (msg ? msg.textContent : "") + "\n\n" + (copy ? copy.textContent : "");
+  var text = (msg && msg.style.display !== "none" ? msg.textContent + "\n\n" : "")
+           + (copy ? copy.textContent : "");
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).catch(function() {});
   } else {
     var ta = document.createElement("textarea");
     ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
+    document.body.appendChild(ta); ta.select();
     document.execCommand("copy");
     document.body.removeChild(ta);
   }
@@ -2923,6 +3129,7 @@ function resetLog() {
     summary.style.cursor = "";
     summary.onclick = null;
   }
+  hidePublishToast();
 }
 
 function escapeHtml(text) {
@@ -4316,10 +4523,12 @@ async function publishDeck() {
     return;
   }
   resetLog();
+  showPublishToast();
   var recipient = currentRecipient();
   var label = currentRecipientLabel();
   if (!recipient) {
     addLog("발행 대상 채널 ID가 비어 있습니다. 발행 단계에서 채널 ID를 입력하세요.", "log-err");
+    finishPublishToast(false, null);
     return;
   }
   addLog("발행 대상 " + label + " 로 메시지를 준비합니다.", "log-info");
@@ -4331,6 +4540,7 @@ async function publishDeck() {
         message: buildSlackMessage()
       });
       addLog("현재 artifact 런타임에서는 텍스트 메시지 발행만 지원합니다.", "log-warn");
+      finishPublishToast(true, "slack_send_message");
     } else if (state.runtimeKind === "tauri") {
       if (!hasSlackIntegration()) throw new Error("slack integration missing");
       addLog("[1/3] 카드 이미지를 렌더링합니다...", "log-info");
@@ -4344,7 +4554,9 @@ async function publishDeck() {
         initial_comment: buildSlackMessage(),
         images: images
       });
-      addLog("✓ 모든 단계 완료 · Slack 채널에 이미지가 공유됐습니다.", "log-ok");
+      var shareMethod = (result && result.shareMethod) ? result.shareMethod : "completeUploadExternal";
+      addLog("✓ 모든 단계 완료 · Slack 채널에 이미지가 공유됐습니다. (방식: " + shareMethod + ")", "log-ok");
+      finishPublishToast(true, shareMethod);
     } else {
       throw new Error("runtime unavailable");
     }
@@ -4403,6 +4615,7 @@ async function publishDeck() {
       addLog("Slack 발행 실패: " + errMsg + hint, "log-err");
     }
     addLog("발행 흐름을 중단했습니다. (로그 클릭하면 상세 확인)", "log-warn");
+    finishPublishToast(false, null);
     return;
   }
   if (published) {
@@ -4436,7 +4649,7 @@ async function publishDeck() {
     renderFavorites();
     renderIssues();
     renderSummary();
-    addLog("발행 흐름을 마쳤습니다.", "log-ok");
+    addLog("✓ 발행 흐름을 마쳤습니다.", "log-ok");
   }
 }
 

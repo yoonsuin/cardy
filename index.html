@@ -4468,16 +4468,7 @@ async function generateDeck() {
 
 function buildSlackMessage() {
   if (!state.pending) return "";
-  var lines = [];
-  if (state.mode === "it") {
-    lines.push("🗞 *Cardy*", "", "• 이슈 수: " + state.selectedKeys.length + "건", "• 카드 수: " + state.pending.slides.length + "장", "", "*포함된 이슈*");
-    for (var i = 0; i < state.selectedKeys.length; i += 1) {
-      var issue = issueByKey(state.selectedKeys[i]);
-      lines.push((i + 1) + ". " + state.selectedKeys[i] + " - " + (issue ? issue.fields.summary : ""));
-    }
-  } else {
-    lines.push("🗞 *Cardy*", "", $("generalTitle").value.trim() || "팀 업데이트", "", $("generalSummary").value.trim() || "카드뉴스가 생성되었습니다.");
-  }
+  var lines = ["새로운 카드 뉴스가 도착했습니다!"];
   if (state.pending.links.length) lines.push("", "*참조 링크*", state.pending.links.join("\n"));
   return lines.join("\n");
 }

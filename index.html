@@ -3893,7 +3893,7 @@ async function loadIssues() {
       nodes = await tauriInvoke("fetch_jira_issues", {
         settings: integrationSettings(),
         jql: $("jqlBox").value.trim(),
-        maxResults: 20,
+        max_results: 20,
         fields: ["summary", "status", "updated", "labels", "description", "assignee", "issuetype"]
       });
     } else {
@@ -3970,7 +3970,7 @@ async function hydrateSelectedIssues() {
       try {
         items.push(await tauriInvoke("fetch_jira_issue", {
           settings: integrationSettings(),
-          issueIdOrKey: cached.key,
+          issue_id_or_key: cached.key,
           fields: ["summary", "status", "updated", "labels", "description", "assignee", "issuetype"]
         }));
         continue;
@@ -4108,7 +4108,7 @@ async function publishDeck() {
       await tauriInvoke("upload_slack_images", {
         settings: integrationSettings(),
         channel: recipient,
-        initialComment: buildSlackMessage(),
+        initial_comment: buildSlackMessage(),
         images: images
       });
       addLog("Slack 카드뉴스 이미지 발행을 완료했습니다.", "log-ok");

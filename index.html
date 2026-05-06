@@ -357,19 +357,55 @@ body {
   opacity: .45;
   cursor: not-allowed;
 }
-.page-shell {
-  display: grid;
-  gap: 0;
+/* ── 페이지 전환 래퍼 ── */
+.pages-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-.page-shell.hidden {
-  display: none;
+/* 각 페이지 뷰 (editor / my) */
+.page-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+.page-view.hidden { display: none; }
+
+/* .main: editor 스테이지 래퍼 */
 .main {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* My 페이지 바디 (2컬럼) */
+.my-body {
+  flex: 1;
+  min-height: 0;
   display: grid;
-  gap: 0;
-  flex: 1;          /* app-frame flex 체인에 참여 → 남은 높이 전부 차지 */
-  min-height: 0;    /* 자식 overflow 허용에 필수 */
-  overflow: hidden; /* 카드 영역이 바깥으로 나가지 않도록 */
+  grid-template-columns: 1.2fr 0.8fr;
+  overflow: hidden;
+}
+.my-left {
+  overflow-y: auto;
+  padding: 16px;
+  border-right: .5px solid var(--bl);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.my-right {
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .panel {
   border-radius: 0;
@@ -433,23 +469,8 @@ body {
   display: grid;
   gap: 8px;
 }
-.history-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-/* My 페이지 높이 고정 */
-#myPage {
-  height: calc(100vh - 20px);
-  overflow: hidden;
-}
-#myPage .app-frame {
-  height: 100%;
-}
-#myPage .app-frame > div:not(.topbar) {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
+/* .history-list: max-height 제거 — my-left 컬럼 전체가 overflow-y:auto로 스크롤 */
+/* My 페이지 history: 개별 max-height 불필요 (my-left 전체가 스크롤) */
 .my-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
@@ -1823,6 +1844,10 @@ select:focus {
 }
 .connection-status-card .conn-actions { display:flex; gap:8px; flex-wrap:wrap; }
 @media (max-width: 1220px) {
+  .my-body {
+    grid-template-columns: 1fr;  /* My 페이지: 1컬럼 세로 스택 */
+  }
+  .my-left { border-right: none; border-bottom: .5px solid var(--bl); }
   .my-grid,
   .stage1-layout {
     grid-template-columns: 1fr;
@@ -1942,7 +1967,8 @@ select:focus {
       </div>
     </section>
 
-  <section class="page-shell" id="editorPage">
+  <div class="pages-wrap">
+  <div class="page-view" id="editorPage">
     <div style="display:none;">
       <div class="log-box" id="logBox">
         <div class="log-line log-info">대기 중</div>
@@ -2207,80 +2233,80 @@ select:focus {
         </div>
       </section>
     </main>
-  </section>
+  </div><!-- /page-view#editorPage -->
 
+  <!-- ── My 페이지 (app-frame 안, editorPage 형제) ── -->
+  <div class="page-view hidden" id="myPage">
+    <div class="my-body">
+
+      <!-- 왼쪽: 설정 · 즐겨찾기 · 발행 기록 (스크롤) -->
+      <div class="my-left">
+
+        <!-- 초기 설정 -->
+        <div class="my-section">
+          <div class="my-section-head">
+            <div>
+              <div class="my-section-title">초기 설정</div>
+              <div class="my-section-sub">Slack Bot Token 및 Jira 자격증명</div>
+            </div>
+            <button class="button-secondary" onclick="openSetupModal()">초기 설정 변경</button>
+          </div>
+          <div class="setup-status-row" id="mySetupStatusRow">
+            <span class="setup-status-pill miss" id="mySlackPill">Slack 미설정</span>
+            <span class="setup-status-pill miss" id="myJiraPill">Jira 미설정</span>
+          </div>
+        </div>
+
+        <!-- 즐겨찾기 발행 대상 -->
+        <div class="my-section">
+          <div class="my-section-head">
+            <div>
+              <div class="my-section-title">즐겨찾기 발행 대상</div>
+              <div class="my-section-sub">채널/DM ID와 즐겨찾기 이름을 편집·삭제할 수 있습니다</div>
+            </div>
+          </div>
+          <div class="favorites-list" id="favoritesList">
+            <div class="favorite-empty">아직 저장된 즐겨찾기가 없습니다. 발행 단계에서 새 채널을 입력하고 "즐겨찾기 저장"을 눌러 추가하세요.</div>
+          </div>
+        </div>
+
+        <!-- 발행 기록 -->
+        <div class="my-section">
+          <div class="my-section-title">발행 기록</div>
+          <div class="history-list" id="historyList">
+            <div class="empty my-empty">아직 발행한 카드뉴스가 없습니다.</div>
+          </div>
+        </div>
+
+      </div><!-- /my-left -->
+
+      <!-- 오른쪽: 상태 요약 (스크롤) -->
+      <div class="my-right">
+        <div class="summary-list">
+          <div class="summary-item">
+            <div class="summary-label">현재 상태</div>
+            <div class="summary-value" id="myStatusText">발행 이력이 없습니다.</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">발행 수</div>
+            <div class="summary-value" id="myHistoryCount">0건</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">즐겨찾기 수</div>
+            <div class="summary-value" id="myFavoritesCount">0개</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Slack 연결</div>
+            <div class="summary-value" id="myIntegrationStatus">설정 필요</div>
+          </div>
+        </div>
+      </div><!-- /my-right -->
+
+    </div><!-- /my-body -->
+  </div><!-- /page-view#myPage -->
+
+  </div><!-- /pages-wrap -->
   </div><!-- /app-frame -->
-
-  <section class="page-shell hidden" id="myPage">
-    <div class="app-frame">
-      <div class="topbar">
-        <span style="font-size:13px;font-weight:500;color:var(--tx1);">My</span>
-        <span style="font-size:11px;color:var(--tx3);">초기 설정과 즐겨찾기, 발행 기록을 관리합니다</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:0;min-height:300px;">
-        <div style="padding:16px;border-right:.5px solid var(--bl);display:grid;gap:24px;align-content:start;">
-
-          <!-- 초기 설정 -->
-          <div class="my-section">
-            <div class="my-section-head">
-              <div>
-                <div class="my-section-title">초기 설정</div>
-                <div class="my-section-sub">Slack Bot Token 및 Jira 자격증명</div>
-              </div>
-              <button class="button-secondary" onclick="openSetupModal()">초기 설정 변경</button>
-            </div>
-            <div class="setup-status-row" id="mySetupStatusRow">
-              <span class="setup-status-pill miss" id="mySlackPill">Slack 미설정</span>
-              <span class="setup-status-pill miss" id="myJiraPill">Jira 미설정</span>
-            </div>
-          </div>
-
-          <!-- 즐겨찾기 발행 대상 -->
-          <div class="my-section">
-            <div class="my-section-head">
-              <div>
-                <div class="my-section-title">즐겨찾기 발행 대상</div>
-                <div class="my-section-sub">채널/DM ID와 즐겨찾기 이름을 편집·삭제할 수 있습니다</div>
-              </div>
-            </div>
-            <div class="favorites-list" id="favoritesList">
-              <div class="favorite-empty">아직 저장된 즐겨찾기가 없습니다. 발행 단계에서 새 채널을 입력하고 "즐겨찾기 저장"을 눌러 추가하세요.</div>
-            </div>
-          </div>
-
-          <!-- 발행 기록 -->
-          <div class="my-section">
-            <div class="my-section-title">발행 기록</div>
-            <div class="history-list" id="historyList">
-              <div class="empty my-empty">아직 발행한 카드뉴스가 없습니다.</div>
-            </div>
-          </div>
-
-        </div>
-        <div style="padding:16px;">
-          <div class="summary-list">
-            <div class="summary-item">
-              <div class="summary-label">현재 상태</div>
-              <div class="summary-value" id="myStatusText">발행 이력이 없습니다.</div>
-            </div>
-            <div class="summary-item">
-              <div class="summary-label">발행 수</div>
-              <div class="summary-value" id="myHistoryCount">0건</div>
-            </div>
-            <div class="summary-item">
-              <div class="summary-label">즐겨찾기 수</div>
-              <div class="summary-value" id="myFavoritesCount">0개</div>
-            </div>
-            <div class="summary-item">
-              <div class="summary-label">Slack 연결</div>
-              <div class="summary-value" id="myIntegrationStatus">설정 필요</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
 
 </div><!-- /app -->
 

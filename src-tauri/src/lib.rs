@@ -3,7 +3,6 @@ use std::{fs, path::PathBuf};
 use base64::{engine::general_purpose, Engine as _};
 use reqwest::{
   header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE},
-  multipart,
   Client,
 };
 use serde::{Deserialize, Serialize};
@@ -31,6 +30,14 @@ struct SlackImagePayload {
   title: Option<String>,
   alt_text: Option<String>,
   data_url: String,
+}
+
+#[derive(Debug, Serialize)]
+struct SlackGetUploadUrlForm<'a> {
+  filename: &'a str,
+  length: usize,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  alt_txt: Option<&'a str>,
 }
 
 // ── 런타임 정보 응답 ──────────────────────────────────────────
@@ -337,18 +344,21 @@ async fn upload_slack_images(
 
   for image in images.iter() {
     let bytes = decode_data_url(&image.data_url)?;
+    let alt_txt = image
+      .alt_text
+      .as_deref()
+      .map(str::trim)
+      .filter(|text| !text.is_empty());
 
     // ── Step 1: 업로드 URL 발급 (form-encoded, JSON 아님) ──
-    // content_type=image/png 명시 → Slack이 이미지로 인식해 썸네일 생성
-    let length_str = bytes.len().to_string();
     let get_url_body: Value = client
       .post("https://slack.com/api/files.getUploadURLExternal")
       .bearer_auth(token)
-      .form(&[
-        ("filename",     image.filename.as_str()),
-        ("length",       length_str.as_str()),
-        ("content_type", "image/png"),
-      ])
+      .form(&SlackGetUploadUrlForm {
+        filename: image.filename.as_str(),
+        length: bytes.len(),
+        alt_txt,
+      })
       .send()
       .await
       .map_err(|e| format!("slack getUploadURL request failed: {e}"))?
@@ -373,9 +383,9 @@ async fn upload_slack_images(
       .ok_or_else(|| "slack getUploadURL: missing file_id".to_string())?
       .to_string();
 
-    // ── Step 2: 파일 바이트 업로드 (PUT, Content-Type: image/png) ──
+    // ── Step 2: 파일 바이트 업로드 (POST, Content-Type: image/png) ──
     let upload_resp = client
-      .put(&upload_url)
+      .post(&upload_url)
       .header("Content-Type", "image/png")
       .body(bytes)
       .send()
@@ -437,12 +447,25 @@ async fn upload_slack_images(
     return Err(format!("slack completeUpload failed: {err}{}", if needed.is_empty() { String::new() } else { format!(" (needed scope: {needed})") }));
   }
 
+  let shared_files = complete_body
+    .get("files")
+    .and_then(Value::as_array)
+    .ok_or_else(|| "slack completeUpload failed: missing files in response".to_string())?;
+  if shared_files.len() != file_ids.len() {
+    return Err(format!(
+      "slack completeUpload failed: expected {} shared files, got {}",
+      file_ids.len(),
+      shared_files.len()
+    ));
+  }
+
   Ok(json!({
     "ok":           true,
     "shareMethod":  "completeUploadExternal",
     "fileCount":    file_ids.len(),
     "channel":      channel_id,
-    "workspaceName": settings.slack_workspace_name
+    "workspaceName": settings.slack_workspace_name,
+    "files":        shared_files
   }))
 }
 

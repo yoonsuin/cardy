@@ -1262,6 +1262,7 @@ select:focus {
   flex-direction: column;
   justify-content: space-between;
   border-radius: 16px;
+  overflow: hidden;
   background:
     radial-gradient(circle at 100% 100%, rgba(138,121,238,.14) 0, rgba(138,121,238,0) 34%),
     linear-gradient(180deg, #252624 0%, #1e1f1d 100%);
@@ -1274,6 +1275,7 @@ select:focus {
   gap:8px;
   flex:1;
   min-height:0;
+  padding-top: 10px;
 }
 .deck-top {
   display: flex;
@@ -1300,7 +1302,7 @@ select:focus {
   border-radius: 5px;
 }
 .deck-title {
-  margin-top: 12px;
+  margin-top: 18px;
   font-size: 30px;
   line-height: 1.12;
   font-weight: 800;
@@ -4543,19 +4545,28 @@ async function publishDeck() {
       finishPublishToast(true, "slack_send_message");
     } else if (state.runtimeKind === "tauri") {
       if (!hasSlackIntegration()) throw new Error("slack integration missing");
-      addLog("[1/3] 카드 이미지를 렌더링합니다...", "log-info");
+      var slackMessage = buildSlackMessage();
+      addLog("[1/4] 카드 이미지를 렌더링합니다...", "log-info");
       var images = await renderDeckPngPayloads();
-      addLog("[1/3] " + images.length + "장 이미지 렌더링 완료.", "log-ok");
-      addLog("[2/3] files.getUploadURLExternal 호출 중... (form-encoded)", "log-info");
-      addLog("[3/3] 업로드 후 files.completeUploadExternal로 채널에 공유합니다.", "log-info");
+      addLog("[1/4] " + images.length + "장 이미지 렌더링 완료.", "log-ok");
+      addLog("[2/4] Slack 메시지를 전송합니다.", "log-info");
+      await tauriInvoke("post_slack_message", {
+        settings: integrationSettings(),
+        channel: recipient,
+        message: slackMessage
+      });
+      addLog("[2/4] Slack 메시지 전송 완료.", "log-ok");
+      addLog("[3/4] files.getUploadURLExternal 호출 후 이미지를 업로드합니다.", "log-info");
+      addLog("[4/4] files.completeUploadExternal로 채널에 이미지를 공유합니다.", "log-info");
       var result = await tauriInvoke("upload_slack_images", {
         settings: integrationSettings(),
         channel: recipient,
-        initial_comment: buildSlackMessage(),
+        initial_comment: "",
         images: images
       });
       var shareMethod = (result && result.shareMethod) ? result.shareMethod : "completeUploadExternal";
-      addLog("✓ 모든 단계 완료 · Slack 채널에 이미지가 공유됐습니다. (방식: " + shareMethod + ")", "log-ok");
+      var fileCount = result && typeof result.fileCount === "number" ? result.fileCount : images.length;
+      addLog("✓ 모든 단계 완료 · Slack 메시지와 이미지 " + fileCount + "장이 전송됐습니다. (방식: " + shareMethod + ")", "log-ok");
       finishPublishToast(true, shareMethod);
     } else {
       throw new Error("runtime unavailable");
@@ -4770,8 +4781,12 @@ async function renderCardPng(slide, modeLabel) {
   var glow = ctx.createRadialGradient(940, 940, 40, 940, 940, 380);
   glow.addColorStop(0, "rgba(138,121,238,.18)");
   glow.addColorStop(1, "rgba(138,121,238,0)");
+  ctx.save();
+  roundRect(ctx, 36, 36, 1008, 1008, 40);
+  ctx.clip();
   ctx.fillStyle = glow;
   ctx.fillRect(36, 36, 1008, 1008);
+  ctx.restore();
 
   roundRect(ctx, 84, 86, 190, 48, 24);
   ctx.fillStyle = "rgba(138,121,238,.18)";
@@ -4788,7 +4803,7 @@ async function renderCardPng(slide, modeLabel) {
 
   var contentX = 84;
   var contentW = 912;
-  var y = 176;
+  var y = 196;
   var hasImage = !!slide.imageUrl;
 
   function drawLines(font, color, text, maxWidth, maxLines, lineHeight, x, startY) {

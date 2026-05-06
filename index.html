@@ -4140,6 +4140,10 @@ async function publishDeck() {
   resetLog();
   var recipient = currentRecipient();
   var label = currentRecipientLabel();
+  if (!recipient) {
+    addLog("발행 대상 채널 ID가 비어 있습니다. 발행 단계에서 채널 ID를 입력하세요.", "log-err");
+    return;
+  }
   addLog("발행 대상 " + label + " 로 메시지를 준비합니다.", "log-info");
   var published = false;
   try {
@@ -4193,10 +4197,13 @@ async function publishDeck() {
       }
     }
   } catch (error) {
+    var errMsg = error == null ? "알 수 없는 오류"
+      : typeof error === "string" ? error          // Tauri는 string으로 reject
+      : (error.message || String(error));
     if (state.runtimeKind === "tauri" && !hasSlackIntegration()) {
       addLog("Slack 토큰 설정이 없어 발행은 생략했습니다. 이미지 저장은 사용할 수 있습니다.", "log-warn");
     } else {
-      addLog("Slack 발행 실패: " + (error && error.message ? error.message : String(error)), "log-err");
+      addLog("Slack 발행 실패: " + errMsg, "log-err");
     }
     addLog("발행 흐름을 중단했습니다.", "log-warn");
     return;

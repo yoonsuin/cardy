@@ -323,6 +323,7 @@ async fn post_slack_message(
 }
 
 /// JS: tauriInvoke("upload_slack_images", { settings, channel, initial_comment, images })
+/// Slack Files v2 API: getUploadURLExternal → upload → completeUploadExternal
 #[tauri::command]
 async fn upload_slack_images(
   settings: IntegrationSettings,
@@ -332,61 +333,97 @@ async fn upload_slack_images(
 ) -> Result<Value, String> {
   let token = ensure_slack_token(&settings)?;
   let client = Client::new();
-  let mut uploaded = Vec::new();
+  let mut file_ids: Vec<(String, Option<String>)> = Vec::new();
 
-  for (index, image) in images.iter().enumerate() {
+  for image in images.iter() {
     let bytes = decode_data_url(&image.data_url)?;
-    let mut form = multipart::Form::new()
-      .text("channels", channel.clone())
-      .part(
-        "file",
-        multipart::Part::bytes(bytes)
-          .file_name(image.filename.clone())
-          .mime_str("image/png")
-          .map_err(|e| format!("file mime set failed: {e}"))?,
-      );
 
-    if let Some(title) = &image.title {
-      if !title.trim().is_empty() {
-        form = form.text("title", title.clone());
-      }
-    }
-    if let Some(alt_text) = &image.alt_text {
-      if !alt_text.trim().is_empty() {
-        form = form.text("alt_txt", alt_text.clone());
-      }
-    }
-    if index == 0 {
-      if let Some(comment) = &initial_comment {
-        if !comment.trim().is_empty() {
-          form = form.text("initial_comment", comment.clone());
-        }
-      }
-    }
-
-    let response = client
-      .post("https://slack.com/api/files.upload")
+    // ── Step 1: 업로드 URL 발급 ───────────────────────────
+    let get_url_body: Value = client
+      .post("https://slack.com/api/files.getUploadURLExternal")
       .bearer_auth(token)
-      .multipart(form)
+      .json(&json!({
+        "filename": image.filename,
+        "length": bytes.len()
+      }))
       .send()
       .await
-      .map_err(|e| format!("slack image upload request failed: {e}"))?;
-
-    let body: Value = response
+      .map_err(|e| format!("slack getUploadURL request failed: {e}"))?
       .json()
       .await
-      .map_err(|e| format!("slack image upload decode failed: {e}"))?;
+      .map_err(|e| format!("slack getUploadURL decode failed: {e}"))?;
 
-    if !body.get("ok").and_then(Value::as_bool).unwrap_or(false) {
-      let err = body.get("error").and_then(Value::as_str).unwrap_or("unknown_error");
-      return Err(format!("slack image upload failed: {err}"));
+    if !get_url_body.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+      let err = get_url_body.get("error").and_then(Value::as_str).unwrap_or("unknown_error");
+      return Err(format!("slack getUploadURL failed: {err}"));
     }
-    uploaded.push(body);
+
+    let upload_url = get_url_body
+      .get("upload_url")
+      .and_then(Value::as_str)
+      .ok_or_else(|| "slack getUploadURL: missing upload_url".to_string())?
+      .to_string();
+    let file_id = get_url_body
+      .get("file_id")
+      .and_then(Value::as_str)
+      .ok_or_else(|| "slack getUploadURL: missing file_id".to_string())?
+      .to_string();
+
+    // ── Step 2: 파일 바이트 업로드 ───────────────────────
+    client
+      .post(&upload_url)
+      .header("Content-Type", "application/octet-stream")
+      .body(bytes)
+      .send()
+      .await
+      .map_err(|e| format!("slack file upload request failed: {e}"))?;
+
+    file_ids.push((file_id, image.title.clone()));
+  }
+
+  // ── Step 3: 업로드 완료 & 채널 공유 ─────────────────────
+  let files_payload: Vec<Value> = file_ids
+    .iter()
+    .map(|(id, title)| {
+      let mut obj = json!({ "id": id });
+      if let Some(t) = title {
+        if !t.trim().is_empty() {
+          obj["title"] = json!(t);
+        }
+      }
+      obj
+    })
+    .collect();
+
+  let mut complete_payload = json!({
+    "files": files_payload,
+    "channel_id": channel
+  });
+  if let Some(comment) = &initial_comment {
+    if !comment.trim().is_empty() {
+      complete_payload["initial_comment"] = json!(comment);
+    }
+  }
+
+  let complete_body: Value = client
+    .post("https://slack.com/api/files.completeUploadExternal")
+    .bearer_auth(token)
+    .json(&complete_payload)
+    .send()
+    .await
+    .map_err(|e| format!("slack completeUpload request failed: {e}"))?
+    .json()
+    .await
+    .map_err(|e| format!("slack completeUpload decode failed: {e}"))?;
+
+  if !complete_body.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+    let err = complete_body.get("error").and_then(Value::as_str).unwrap_or("unknown_error");
+    return Err(format!("slack completeUpload failed: {err}"));
   }
 
   Ok(json!({
     "ok": true,
-    "uploads": uploaded,
+    "uploads": complete_body,
     "workspaceName": settings.slack_workspace_name
   }))
 }

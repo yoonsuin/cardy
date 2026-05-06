@@ -1284,6 +1284,8 @@ select:focus {
   align-items: center;
 }
 .deck-brand {
+  display: inline-flex;
+  align-items: center;
   padding: 5px 10px;
   border-radius: 999px;
   background: rgba(138,121,238,.18);
@@ -1292,6 +1294,9 @@ select:focus {
   font-weight: 700;
   letter-spacing: .03em;
   text-transform: uppercase;
+  white-space: nowrap;
+  width: fit-content;
+  max-width: calc(100% - 110px);
 }
 .deck-num {
   font-size: 12px;
@@ -4748,6 +4753,25 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
+function drawImageCover(ctx, image, x, y, width, height) {
+  var imageRatio = image.width / image.height;
+  var frameRatio = width / height;
+  var drawWidth = width;
+  var drawHeight = height;
+  var drawX = x;
+  var drawY = y;
+
+  if (imageRatio > frameRatio) {
+    drawWidth = height * imageRatio;
+    drawX = x - ((drawWidth - width) / 2);
+  } else {
+    drawHeight = width / imageRatio;
+    drawY = y - ((drawHeight - height) / 2);
+  }
+
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+}
+
 function loadImageFromSource(src) {
   return new Promise(function(resolve, reject) {
     if (!src) {
@@ -4788,12 +4812,14 @@ async function renderCardPng(slide, modeLabel) {
   ctx.fillRect(36, 36, 1008, 1008);
   ctx.restore();
 
-  roundRect(ctx, 84, 86, 190, 48, 24);
+  ctx.font = "700 21px Inter, sans-serif";
+  var brandText = slide.tag || "Cardy";
+  var brandWidth = Math.min(320, Math.max(146, Math.ceil(ctx.measureText(brandText).width + 48)));
+  roundRect(ctx, 84, 86, brandWidth, 48, 24);
   ctx.fillStyle = "rgba(138,121,238,.18)";
   ctx.fill();
   ctx.fillStyle = "#ddd5ff";
-  ctx.font = "700 21px Inter, sans-serif";
-  ctx.fillText(slide.tag || "Cardy", 108, 117);
+  ctx.fillText(brandText, 108, 117);
 
   ctx.textAlign = "right";
   ctx.fillStyle = "rgba(245,241,234,.54)";
@@ -4870,7 +4896,7 @@ async function renderCardPng(slide, modeLabel) {
         roundRect(ctx, contentX, y, contentW, 360, 24);
         ctx.save();
         ctx.clip();
-        ctx.drawImage(topImage, contentX, y, contentW, 360);
+        drawImageCover(ctx, topImage, contentX, y, contentW, 360);
         ctx.restore();
         y += 392;
       } catch (error1) {
@@ -4887,7 +4913,7 @@ async function renderCardPng(slide, modeLabel) {
         roundRect(ctx, contentX, 738, contentW, 210, 22);
         ctx.save();
         ctx.clip();
-        ctx.drawImage(image, contentX, 738, contentW, 210);
+        drawImageCover(ctx, image, contentX, 738, contentW, 210);
         ctx.restore();
       } catch (error2) {
         roundRect(ctx, contentX, 738, contentW, 210, 22);

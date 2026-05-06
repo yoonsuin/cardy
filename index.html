@@ -2210,7 +2210,13 @@ select:focus {
         <div class="config-card-copy">모든 모드에서 발행과 채널 조회에 사용합니다. 팀 공용 봇 토큰 기준으로 동작합니다.</div>
         <div class="field" id="fieldSlackBotToken">
           <div class="label">Slack Bot Token</div>
-          <input type="password" id="slackBotToken" placeholder="xoxb-..." />
+          <div style="position:relative;display:flex;align-items:center;">
+            <input type="password" id="slackBotToken" placeholder="xoxb-..." style="flex:1;padding-right:36px;" />
+            <button type="button" onclick="toggleVisibility('slackBotToken',this)"
+              style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--tx3);font-size:13px;padding:0;line-height:1;">
+              👁
+            </button>
+          </div>
         </div>
         <div class="inline-grid">
           <div class="field">
@@ -2245,12 +2251,18 @@ select:focus {
           </div>
           <div class="field" id="fieldJiraApiToken">
             <div class="label">Jira API Token</div>
-            <input type="password" id="jiraApiToken" placeholder="Atlassian API token" />
+            <div style="position:relative;display:flex;align-items:center;">
+              <input type="password" id="jiraApiToken" placeholder="Atlassian API token" style="flex:1;padding-right:36px;" />
+              <button type="button" onclick="toggleVisibility('jiraApiToken',this)"
+                style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--tx3);font-size:13px;padding:0;line-height:1;">
+                👁
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="secure-note" style="margin:0;">자격증명은 로컬 앱 설정 파일에 저장됩니다. 배포 전에는 OS keychain 이전이 필요합니다.</div>
+      <div class="secure-note" style="margin:0;">🔒 토큰은 이 기기의 앱 설정 폴더에만 저장됩니다. 외부 서버로 전송되지 않으며, 팀 공유 시 각자 개별 입력이 필요합니다.</div>
     </div>
     <div class="modal-foot">
       <button class="button-secondary" type="button" onclick="closeSetupModal()" id="setupModalCancelBtn">취소</button>
@@ -2412,6 +2424,14 @@ function setInputValue(id, value) {
 
 function readInputValue(id) {
   return $(id) ? $(id).value.trim() : "";
+}
+
+function toggleVisibility(id, btn) {
+  var el = $(id);
+  if (!el) return;
+  var isHidden = el.type === "password";
+  el.type = isHidden ? "text" : "password";
+  btn.textContent = isHidden ? "🙈" : "👁";
 }
 
 function normalizeSlackConfig(config) {

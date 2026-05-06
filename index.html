@@ -3481,7 +3481,7 @@ function extractFigmaLinks(text) {
 function updateSlideItems(index, value) {
   if (!state.pending || !state.pending.slides[index]) return;
   state.pending.slides[index].items = value.split(/\n+/).map(function(item) { return item.trim(); }).filter(Boolean);
-  renderPreviewBoard();
+  renderRailCards();   // 에디터는 건드리지 않음 → 포커스 유지
   renderSummary();
 }
 
@@ -3520,13 +3520,11 @@ function themePalette(theme) {
   return map[theme] || map.cover;
 }
 
-function renderPreviewBoard() {
+function renderRailCards() {
   var preview = $("previewBoard");
-  var editors = $("slideEditorList");
   renderStageTwoMeta();
   if (!state.pending || !state.pending.slides.length) {
     preview.innerHTML = "<div class='placeholder'>카드뉴스를 생성하면 미리보기가 여기에 표시됩니다.</div>";
-    editors.innerHTML = "<div class='placeholder'>카드뉴스를 생성하면 각 장의 편집기가 여기에 표시됩니다.</div>";
     updateScrollButtons();
     updateStats();
     return;
@@ -3594,7 +3592,17 @@ function renderPreviewBoard() {
         "<div class='card-hint " + (isActive ? "active" : "") + "'>" + (index === 0 ? "🔒 고정" : isActive ? "편집 중" : "드래그") + "</div>" +
       "</div>";
   }).join("") + (state.pending.slides.length < 7 ? "<div class='rail-card'><button class='card-add' onclick='addSlide()'><span style='font-size:18px;color:var(--tx3)'>+</span><span style='font-size:10px;color:var(--tx3)'>카드 추가</span></button></div>" : "");
+  updateScrollButtons();
+  updateStats();
+}
 
+function renderEditorPanel() {
+  var editors = $("slideEditorList");
+  if (!state.pending || !state.pending.slides.length) {
+    editors.innerHTML = "<div class='placeholder'>카드뉴스를 생성하면 각 장의 편집기가 여기에 표시됩니다.</div>";
+    return;
+  }
+  if (state.activeSlideIndex >= state.pending.slides.length) state.activeSlideIndex = 0;
   var activeSlide = normalizeSlide(state.pending.slides[state.activeSlideIndex]);
   editors.innerHTML = (function(slide, index) {
     slide = normalizeSlide(slide);
@@ -3633,11 +3641,14 @@ function renderPreviewBoard() {
             ? "<div class='template-inline-grid'><div class='field'><div class='label'>왼쪽 제목</div><input type='text' value=\"" + escapeAttribute(slide.leftTitle) + "\" oninput=\"updateSlide(" + index + ", 'leftTitle', this.value)\" /></div><div class='field'><div class='label'>오른쪽 제목</div><input type='text' value=\"" + escapeAttribute(slide.rightTitle) + "\" oninput=\"updateSlide(" + index + ", 'rightTitle', this.value)\" /></div></div><div class='template-inline-grid'><div class='field'><div class='label'>왼쪽 내용</div><textarea oninput=\"updateSlide(" + index + ", 'leftBody', this.value)\">" + escapeTextarea(slide.leftBody) + "</textarea></div><div class='field'><div class='label'>오른쪽 내용</div><textarea oninput=\"updateSlide(" + index + ", 'rightBody', this.value)\">" + escapeTextarea(slide.rightBody) + "</textarea></div></div>"
             : "<div class='field'><div class='label'>본문</div><textarea oninput=\"updateSlide(" + index + ", 'body', this.value)\">" + escapeTextarea(slide.body) + "</textarea></div>"
         ) +
-        "<div class='field'><div class='label'>이미지(선택)</div><div class='image-drop'><div class='image-picker " + (slide.imageUrl ? "has-image" : "") + "'>" + (slide.imageUrl ? "<img src=\"" + escapeAttribute(slide.imageUrl) + "\" alt='selected image' />" : "<span>+ 이미지 추가</span>") + "</div><input type='file' accept='image/*' onchange='uploadSlideImage(" + index + ", this)' /><input type='text' value=\"" + escapeAttribute(slide.imageUrl || "") + "\" placeholder='이미지 URL 또는 업로드 사용' oninput=\"updateSlide(" + index + ", 'imageUrl', this.value)\" /><div class='template-tip'>로컬 이미지 업로드 또는 이미지 URL 입력을 지원합니다.</div></div></div>" +
+        "<div class='field'><div class='label'>이미지(선택)</div><div class='image-drop'><div class='image-picker " + (slide.imageUrl ? "has-image" : "") + "' onclick='this.nextElementSibling.click()'>" + (slide.imageUrl ? "<img src=\"" + escapeAttribute(slide.imageUrl) + "\" alt='selected image' />" : "<span>+ 이미지 추가</span>") + "</div><input type='file' accept='image/*' style='display:none' onchange='uploadSlideImage(" + index + ", this)' /><input type='text' value=\"" + escapeAttribute(slide.imageUrl || "") + "\" placeholder='이미지 URL 또는 업로드 사용' oninput=\"updateSlide(" + index + ", 'imageUrl', this.value)\" /><div class='template-tip'>로컬 이미지 업로드 또는 이미지 URL 입력을 지원합니다.</div></div></div>" +
       "</div>";
   })(activeSlide, state.activeSlideIndex);
-  updateScrollButtons();
-  updateStats();
+}
+
+function renderPreviewBoard() {
+  renderRailCards();
+  renderEditorPanel();
 }
 
 function selectSlide(index) {
@@ -3740,7 +3751,7 @@ function addSlide() {
 function updateSlide(index, field, value) {
   if (!state.pending || !state.pending.slides[index]) return;
   state.pending.slides[index][field] = value;
-  renderPreviewBoard();
+  renderRailCards();   // 에디터는 건드리지 않음 → 포커스 유지
   renderSummary();
 }
 

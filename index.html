@@ -2180,7 +2180,7 @@ select:focus {
             <div class="inline-grid">
               <div class="field">
                 <div class="label">제목</div>
-                <input type="text" id="generalTitle" placeholder="예: 4월 마지막 주 업데이트" />
+                <input type="text" id="generalTitle" placeholder="예: 카드 뉴스 타이틀" />
               </div>
               <div class="field">
                 <div class="label">대상 독자</div>
@@ -3286,7 +3286,7 @@ function stageIndexToStepNumber(index) {
 function ensureGeneralDraft() {
   if (state.mode !== "general") return true;
   if (state.pending && state.pending.slides && state.pending.slides.length) return true;
-  var title = $("generalTitle").value.trim() || "팀 업데이트";
+  var title = $("generalTitle").value.trim() || "카드 뉴스 타이틀";
   var summary = $("generalSummary").value.trim() || "첫 카드를 기준으로 내용을 구성하세요.";
   var imageUrl = $("generalImageUrl").value.trim();
   state.pending = {
@@ -4468,7 +4468,7 @@ async function generateDeck() {
 
 function buildSlackMessage() {
   if (!state.pending) return "";
-  var lines = ["새로운 카드 뉴스가 도착했습니다!"];
+  var lines = ["🗞️ Cardy", "새로운 카드 뉴스가 도착했습니다!"];
   if (state.pending.links.length) lines.push("", "*참조 링크*", state.pending.links.join("\n"));
   return lines.join("\n");
 }
